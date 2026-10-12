@@ -2,6 +2,7 @@ from meshcad.core.geometry.line import Line
 from meshcad.core.geometry.point import Point2D
 from meshcad.gui.document import Document
 from meshcad.gui.main_window import MainWindow
+from meshcad.io.project_io import load_project
 
 
 def test_main_window_starts_with_empty_document(qtbot):
@@ -26,7 +27,7 @@ def test_main_window_new_clears(qtbot):
     assert w.current_path is None
 
 
-def test_main_window_save_and_open(qtbot, tmp_path):
+def test_main_window_save_and_reload(qtbot, tmp_path):
     w = MainWindow()
     qtbot.addWidget(w)
 
@@ -43,5 +44,7 @@ def test_main_window_save_and_open(qtbot, tmp_path):
     w._on_new()
     assert len(w.document.topology.edges()) == 0
 
-    w.document.load_from(__import__("meshcad.io.project_io", fromlist=["load_project"]).load_project(path))
+    data = load_project(path)
+    loaded = Document.from_dict(data)
+    w.document.load_from(loaded)
     assert len(w.document.topology.edges()) == 1

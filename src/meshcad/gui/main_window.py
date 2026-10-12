@@ -151,7 +151,8 @@ class MainWindow(QMainWindow):
         if not path:
             return
         try:
-            loaded = load_project(path)
+            data = load_project(path)
+            loaded = Document.from_dict(data)
         except Exception as e:
             QMessageBox.critical(self, "Error al abrir", str(e))
             return
@@ -178,7 +179,7 @@ class MainWindow(QMainWindow):
 
     def _save_to(self, path: Path) -> None:
         try:
-            save_project(self.document, path)
+            save_project(self.document.to_dict(), path)
         except Exception as e:
             QMessageBox.critical(self, "Error al guardar", str(e))
             return
@@ -216,7 +217,6 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("MeshCAD - {}".format(self.current_path))
 
     def _on_project_replaced(self) -> None:
-        # Refrescar paneles que dependen del estado del documento
         self.edges_panel.refresh()
 
     def _on_generate_mesh(self) -> None:
