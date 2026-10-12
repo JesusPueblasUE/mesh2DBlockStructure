@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
 from PyQt5.QtWidgets import (
     QGraphicsEllipseItem,
@@ -15,16 +15,10 @@ from meshcad.gui.document import Document
 from meshcad.gui.items import GeometryItem
 
 VERTEX_RADIUS = 4.0
-SNAP_TOLERANCE = 8.0  # en pixeles de pantalla
+SNAP_TOLERANCE = 8.0
 
 
 class CadCanvas(QGraphicsView):
-    """Vista grafica donde se dibujan las entidades CAD.
-
-    Delega los eventos de raton en la herramienta activa (si la hay)
-    y mantiene un item temporal de vista previa.
-    """
-
     def __init__(self, document: Document, parent=None) -> None:
         super().__init__(parent)
         self.document = document
@@ -36,6 +30,7 @@ class CadCanvas(QGraphicsView):
         self.tool = None
         self._vertex_items = {}
         self._preview_item = None
+        self._highlight_item = None
 
         self.document.topology_changed.connect(self._redraw_vertices)
 
@@ -48,20 +43,15 @@ class CadCanvas(QGraphicsView):
 
     def add_geometry(self, geometry):
         topo = self.document.topology
-
         v_start = topo.find_vertex_at(geometry.start_point())
         if v_start is None:
             v_start = topo.add_vertex(geometry.start_point())
-
         v_end = topo.find_vertex_at(geometry.end_point())
         if v_end is None:
             v_end = topo.add_vertex(geometry.end_point())
-
         edge = topo.add_edge(v_start, v_end, geometry)
-
         item = GeometryItem(geometry)
         self.scene().addItem(item)
-
         self.document.notify_change()
         return edge
 
@@ -74,10 +64,8 @@ class CadCanvas(QGraphicsView):
             if best_dist is None or d < best_dist:
                 best = v
                 best_dist = d
-
         if best is None:
             return None
-
         scale = self.transform().m11()
         if scale <= 0:
             return best
@@ -89,7 +77,6 @@ class CadCanvas(QGraphicsView):
     # ----------------------------- preview ------------------------------- #
 
     def show_preview(self, geometry) -> None:
-        """Muestra una geometria temporal (rubber band)."""
         self.clear_preview()
         if geometry is None:
             return
@@ -101,6 +88,51 @@ class CadCanvas(QGraphicsView):
         if self._preview_item is not None:
             self.scene().removeItem(self._preview_item)
             self._preview_item = None
+
+    # ---------------------------- highlight ------------------------------ #
+
+    def highlight_loop(self, loop) -> None:
+        from PyQt5.QtGui import QPainterPath
+
+        self.clear_highlight()
+        topo = self.document.topology
+        path = QPainterPath()
+        started = False
+        for oe in loop:
+            geom = topo.get_edge(oe.edge_id).geometry
+            pts = geom.sample(30)
+            if oe.reversed:
+                pts = list(reversed(pts))
+            for p in pts:
+                if not started:
+                    path.moveTo(p.x, p.y)
+                    started = True
+                else:
+                    path.lineTo(p.x, p.y)
+
+        from PyQt5.QtWidgets import QGraphicsPathItem
+
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(60, 180, 60))
+        pen.setWidthF(4.0)
+        pen.setCosmetic(True)
+        item.setPen(pen)
+        item.setZValue(8.0)
+        self.scene().addItem(item)
+        self._highlight_item = item
+
+    def clear_highlight(self) -> None:
+        if self._highlight_item is not None:
+            self.scene().removeItem(self._highlight_item)
+            self._highlight_item = None
+
+    def flash_vertex(self, vertex_id: int) -> None:
+        item = self._vertex_items.get(vertex_id)
+        if item is None:
+            return
+        original_brush = item.brush()
+        item.setBrush(QBrush(QColor(60, 200, 60)))
+        QTimer.singleShot(200, lambda: item.setBrush(original_brush))
 
     # ------------------------------- eventos ----------------------------- #
 
