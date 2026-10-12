@@ -7,7 +7,7 @@ from meshcad.gui.tools.base import BaseTool
 
 
 class LineTool(BaseTool):
-    """Dos clics: inicio y fin."""
+    """Dos clics: inicio y fin. Muestra la recta en tiempo real."""
 
     def mouse_press(self, event) -> None:
         p = self._scene_point(event)
@@ -16,3 +16,13 @@ class LineTool(BaseTool):
         if len(self.points) == 2:
             self.canvas.add_geometry(Line(self.points[0], self.points[1]))
             self.points = []
+            self.canvas.clear_preview()
+        else:
+            self._refresh_preview(event)
+
+    def _refresh_preview(self, event) -> None:
+        if not self.points:
+            self.canvas.clear_preview()
+            return
+        p = self._scene_point(event)
+        self.canvas.show_preview(Line(self.points[0], p))
