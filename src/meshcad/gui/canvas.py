@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import (
     QGraphicsEllipseItem,
+    QGraphicsPathItem,
     QGraphicsScene,
     QGraphicsView,
 )
@@ -31,8 +32,10 @@ class CadCanvas(QGraphicsView):
         self._vertex_items = {}
         self._preview_item = None
         self._highlight_item = None
+        self._mesh_item = None
 
         self.document.topology_changed.connect(self._redraw_vertices)
+        self.document.mesh_generated.connect(self._on_mesh_generated)
 
     # ----------------------------- API publica --------------------------- #
 
@@ -92,8 +95,6 @@ class CadCanvas(QGraphicsView):
     # ---------------------------- highlight ------------------------------ #
 
     def highlight_loop(self, loop) -> None:
-        from PyQt5.QtGui import QPainterPath
-
         self.clear_highlight()
         topo = self.document.topology
         path = QPainterPath()
@@ -109,8 +110,6 @@ class CadCanvas(QGraphicsView):
                     started = True
                 else:
                     path.lineTo(p.x, p.y)
-
-        from PyQt5.QtWidgets import QGraphicsPathItem
 
         item = QGraphicsPathItem(path)
         pen = QPen(QColor(60, 180, 60))
@@ -133,6 +132,47 @@ class CadCanvas(QGraphicsView):
         original_brush = item.brush()
         item.setBrush(QBrush(QColor(60, 200, 60)))
         QTimer.singleShot(200, lambda: item.setBrush(original_brush))
+
+    # ------------------------------ mesh --------------------------------- #
+
+    def show_mesh(self, block_meshes) -> None:
+        """Dibuja las mallas de los bloques como lineas finas."""
+        self.clear_mesh()
+        path = QPainterPath()
+        for bm in block_meshes:
+            grid = bm.grid
+            n_v = len(grid)
+            if n_v == 0:
+                continue
+            n_u = len(grid[0])
+
+            # Lineas verticales (columnas)
+            for i in range(n_u):
+                path.moveTo(grid[0][i].x, grid[0][i].y)
+                for j in range(1, n_v):
+                    path.lineTo(grid[j][i].x, grid[j][i].y)
+            # Lineas horizontales (filas)
+            for j in range(n_v):
+                path.moveTo(grid[j][0].x, grid[j][0].y)
+                for i in range(1, n_u):
+                    path.lineTo(grid[j][i].x, grid[j][i].y)
+
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(40, 40, 40))
+        pen.setWidthF(0.8)
+        pen.setCosmetic(True)
+        item.setPen(pen)
+        item.setZValue(3.0)
+        self.scene().addItem(item)
+        self._mesh_item = item
+
+    def clear_mesh(self) -> None:
+        if self._mesh_item is not None:
+            self.scene().removeItem(self._mesh_item)
+            self._mesh_item = None
+
+    def _on_mesh_generated(self) -> None:
+        self.show_mesh(self.document.block_meshes)
 
     # ------------------------------- eventos ----------------------------- #
 

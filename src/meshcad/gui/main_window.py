@@ -3,7 +3,14 @@
 import sys
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QToolBar
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QLabel,
+    QMainWindow,
+    QStatusBar,
+    QToolBar,
+)
 
 from meshcad.gui.blocks_panel import BlocksPanel
 from meshcad.gui.canvas import CadCanvas
@@ -35,6 +42,12 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.blocks_panel)
 
         self.document.topology_changed.connect(self.edges_panel.refresh)
+        self.document.mesh_generated.connect(self._on_mesh_generated)
+
+        status = QStatusBar()
+        self.setStatusBar(status)
+        self.status_label = QLabel("Listo")
+        status.addWidget(self.status_label)
 
         self._create_toolbar()
 
@@ -63,6 +76,33 @@ class MainWindow(QMainWindow):
             lambda: self.canvas.set_tool(SplineTool(self.canvas))
         )
         toolbar.addAction(self.action_spline)
+
+        toolbar.addSeparator()
+
+        self.action_mesh = QAction("Generar malla", self)
+        self.action_mesh.triggered.connect(self._on_generate_mesh)
+        toolbar.addAction(self.action_mesh)
+
+        self.action_clear_mesh = QAction("Borrar malla", self)
+        self.action_clear_mesh.triggered.connect(self.canvas.clear_mesh)
+        toolbar.addAction(self.action_clear_mesh)
+
+    def _on_generate_mesh(self) -> None:
+        meshes, errors = self.document.generate_mesh()
+        if errors:
+            self.status_label.setText(
+                "Errores: " + "; ".join(errors)
+            )
+        else:
+            total_cells = sum(bm.cell_count() for bm in meshes)
+            self.status_label.setText(
+                "Malla generada: {} bloques, {} celdas".format(
+                    len(meshes), total_cells
+                )
+            )
+
+    def _on_mesh_generated(self) -> None:
+        pass
 
 
 def main() -> None:
