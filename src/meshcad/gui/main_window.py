@@ -8,6 +8,7 @@ from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
 from meshcad.gui.tools.arc_tool import ArcTool
 from meshcad.gui.tools.line_tool import LineTool
+from meshcad.gui.tools.spline_tool import SplineTool
 
 
 class MainWindow(QMainWindow):
@@ -41,6 +42,12 @@ class MainWindow(QMainWindow):
             lambda: self.canvas.set_tool(ArcTool(self.canvas))
         )
         toolbar.addAction(self.action_arc)
+
+        self.action_spline = QAction("Spline", self)
+        self.action_spline.triggered.connect(
+            lambda: self.canvas.set_tool(SplineTool(self.canvas))
+        )
+        toolbar.addAction(self.action_spline)
 
 
 def main() -> None:
