@@ -5,9 +5,13 @@ from meshcad.core.mesh.distribution import (
     NodeDistribution,
     UniformDistribution,
 )
+from meshcad.core.mesh.model import EdgeMeshSpec, MeshModel, DEFAULT_N_NODES
 
 __all__ = [
     "NodeDistribution",
     "UniformDistribution",
     "BiasedDistribution",
+    "EdgeMeshSpec",
+    "MeshModel",
+    "DEFAULT_N_NODES",
 ]
