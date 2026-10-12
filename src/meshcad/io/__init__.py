@@ -14,6 +14,7 @@ from meshcad.io.json_io import (
     topology_from_dict,
     topology_to_dict,
 )
+from meshcad.io.project_io import load_project, save_project
 
 __all__ = [
     "geometry_to_dict",
@@ -28,4 +29,6 @@ __all__ = [
     "block_side_from_dict",
     "block_to_dict",
     "block_from_dict",
+    "save_project",
+    "load_project",
 ]
