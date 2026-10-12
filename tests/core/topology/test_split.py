@@ -40,7 +40,6 @@ def test_split_square_into_four_sides():
 def test_split_accepts_any_order():
     t, (v0, v1, v2, v3), (e0, e1, e2, e3), loop = make_square()
     sides = loop.split_at_corners(t, [v2.id, v0.id, v3.id, v1.id])
-    # Reordenado por posicion en el loop: v0, v1, v2, v3
     assert sides[0].edge_ids() == [e0.id]
     assert sides[1].edge_ids() == [e1.id]
     assert sides[2].edge_ids() == [e2.id]
@@ -59,16 +58,15 @@ def test_split_requires_distinct_corners():
         loop.split_at_corners(t, [v0.id, v1.id, v1.id, v0.id])
 
 
-def test_split_rejects_foreign_vertex():
-    t, (_, _, _, _), _, loop = make_square()
-    other = Topology()
-    v_foreign = other.add_vertex(Point2D(99, 99))
+def test_split_rejects_nonexistent_vertex_id():
+    # Un ID que no pertenece a la topologia del loop debe ser rechazado.
+    t, (v0, _, _, _), _, loop = make_square()
+    fake_id = 99999
     with pytest.raises(ValueError):
-        loop.split_at_corners(t, [v_foreign.id, 1, 2, 3])
+        loop.split_at_corners(t, [fake_id, 1, 2, 3])
 
 
 def test_split_with_multiple_edges_per_side():
-    """Hexagono: v0..v5, se eligen esquinas cada 2 vertices."""
     t = Topology()
     coords = [
         (0.0, 0.0), (1.0, 0.0), (2.0, 0.5),
@@ -85,7 +83,6 @@ def test_split_with_multiple_edges_per_side():
     for e in edges:
         loop.add_edge(e.id)
 
-    # Esquinas: v0, v2, v3, v5
     sides = loop.split_at_corners(
         t, [verts[0].id, verts[2].id, verts[3].id, verts[5].id]
     )
