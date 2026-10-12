@@ -46,10 +46,10 @@ class Spline(GeometryEntity):
         return self.points[-1]
 
     def evaluate(self, t: float) -> Point2D:
-        """Evalua la spline en t en [0, 1]."""
         n = len(self.points)
         if n == 2:
             a, b = self.points
+            t = max(0.0, min(1.0, t))
             return Point2D(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
 
         t = max(0.0, min(1.0, t))

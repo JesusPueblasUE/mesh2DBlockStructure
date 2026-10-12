@@ -24,11 +24,15 @@ class GeometryEntity(ABC):
         """Longitud total de la entidad."""
 
     @abstractmethod
-    def sample(self, n: int) -> List[Point2D]:
-        """Devuelve n puntos a lo largo de la entidad, incluyendo los extremos.
+    def evaluate(self, t: float) -> Point2D:
+        """Evalua la entidad en el parametro normalizado t en [0, 1].
 
-        n debe ser >= 2.
+        t=0 devuelve start_point, t=1 devuelve end_point.
         """
+
+    @abstractmethod
+    def sample(self, n: int) -> List[Point2D]:
+        """Devuelve n puntos equiespaciados en t, incluyendo los extremos."""
 
     @abstractmethod
     def bounding_box(self) -> Tuple[Point2D, Point2D]:

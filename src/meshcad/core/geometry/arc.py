@@ -51,14 +51,14 @@ class Arc(GeometryEntity):
     def length(self) -> float:
         return self.radius * self.angle_span()
 
+    def evaluate(self, t: float) -> Point2D:
+        t = max(0.0, min(1.0, t))
+        return self.point_at_angle(self.start_angle + self.angle_span() * t)
+
     def sample(self, n: int) -> List[Point2D]:
         if n < 2:
             raise ValueError("n debe ser >= 2")
-        span = self.angle_span()
-        return [
-            self.point_at_angle(self.start_angle + span * i / (n - 1))
-            for i in range(n)
-        ]
+        return [self.evaluate(i / (n - 1)) for i in range(n)]
 
     def bounding_box(self) -> Tuple[Point2D, Point2D]:
         pts = [self.start_point(), self.end_point()]

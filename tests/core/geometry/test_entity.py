@@ -29,6 +29,9 @@ def test_complete_subclass_can_be_instantiated():
         def length(self):
             return 1.0
 
+        def evaluate(self, t):
+            return Point2D(t, 0.0)
+
         def sample(self, n):
             return [Point2D(0, 0), Point2D(1, 0)]
 

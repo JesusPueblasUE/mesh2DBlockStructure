@@ -25,16 +25,17 @@ class Line(GeometryEntity):
     def length(self) -> float:
         return self.start.distance_to(self.end)
 
+    def evaluate(self, t: float) -> Point2D:
+        t = max(0.0, min(1.0, t))
+        return Point2D(
+            self.start.x + (self.end.x - self.start.x) * t,
+            self.start.y + (self.end.y - self.start.y) * t,
+        )
+
     def sample(self, n: int) -> List[Point2D]:
         if n < 2:
             raise ValueError("n debe ser >= 2")
-        dx = self.end.x - self.start.x
-        dy = self.end.y - self.start.y
-        return [
-            Point2D(self.start.x + dx * i / (n - 1),
-                    self.start.y + dy * i / (n - 1))
-            for i in range(n)
-        ]
+        return [self.evaluate(i / (n - 1)) for i in range(n)]
 
     def bounding_box(self) -> Tuple[Point2D, Point2D]:
         return (
