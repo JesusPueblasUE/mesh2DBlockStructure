@@ -88,8 +88,13 @@ class Topology:
     def edges(self) -> List[Edge]:
         return list(self._edges.values())
 
-    def _load_state(self, vertices, edges) -> None:
-        """Reemplaza el estado interno (uso: deserializacion)."""
+    def import_state(self, vertices, edges) -> None:
+        """Reemplaza el estado interno desde diccionarios externos.
+
+        API publica usada por la capa de IO. Recalcula los
+        contadores para que los siguientes add_vertex/add_edge
+        sigan asignando IDs unicos.
+        """
         from itertools import count as _count
 
         self._vertices = dict(vertices)

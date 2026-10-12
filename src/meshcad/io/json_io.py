@@ -139,7 +139,7 @@ def topology_from_dict(data: Dict[str, Any]) -> Topology:
             g,
         )
         edges[e.id] = e
-    t._load_state(vertices, edges)
+    t.import_state(vertices, edges)
     return t
 
 
