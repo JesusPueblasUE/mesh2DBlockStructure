@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QToolBar
 
 from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
+from meshcad.gui.tools.arc_tool import ArcTool
 from meshcad.gui.tools.line_tool import LineTool
 
 
@@ -34,6 +35,12 @@ class MainWindow(QMainWindow):
             lambda: self.canvas.set_tool(LineTool(self.canvas))
         )
         toolbar.addAction(self.action_line)
+
+        self.action_arc = QAction("Arco", self)
+        self.action_arc.triggered.connect(
+            lambda: self.canvas.set_tool(ArcTool(self.canvas))
+        )
+        toolbar.addAction(self.action_arc)
 
 
 def main() -> None:
