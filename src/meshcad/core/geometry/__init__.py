@@ -2,5 +2,7 @@
 
 from meshcad.core.geometry.point import Point2D
 from meshcad.core.geometry.vector import Vector2D
+from meshcad.core.geometry.entity import GeometryEntity
+from meshcad.core.geometry.line import Line
 
-__all__ = ["Point2D", "Vector2D"]
+__all__ = ["Point2D", "Vector2D", "GeometryEntity", "Line"]
