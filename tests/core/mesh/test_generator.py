@@ -105,8 +105,8 @@ def test_adjacent_blocks_are_conformal():
     loop_left = Loop()
     loop_left.add_edge(e_bottom_left.id)
     loop_left.add_edge(e_shared.id)
-    loop_left.add_edge(e_top_left.id, reversed=True)
-    loop_left.add_edge(e_left.id, reversed=True)
+    loop_left.add_edge(e_top_left.id)
+    loop_left.add_edge(e_left.id)
 
     loop_right = Loop()
     loop_right.add_edge(e_bottom_right.id)
