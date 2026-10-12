@@ -10,8 +10,9 @@ from meshcad.core.geometry.point import Point2D
 class BaseTool:
     """Interfaz comun a todas las herramientas interactivas.
 
-    La herramienta recibe los eventos de raton del canvas. Acumula
-    puntos hasta tener suficientes y luego llama a canvas.add_geometry.
+    Cada herramienta acumula puntos en self.points. Cuando tiene
+    suficientes, llama a canvas.add_geometry. Mientras tanto muestra
+    una vista previa llamando a canvas.show_preview.
     """
 
     def __init__(self, canvas) -> None:
@@ -22,10 +23,13 @@ class BaseTool:
         raise NotImplementedError
 
     def mouse_move(self, event) -> None:
-        return None
+        self._refresh_preview(event)
 
     def cancel(self) -> None:
         self.points = []
+        self.canvas.clear_preview()
+
+    # ----------------------- utilidades para subclases ------------------ #
 
     def _scene_point(self, event) -> Point2D:
         pos = self.canvas.mapToScene(event.pos())
@@ -34,3 +38,7 @@ class BaseTool:
         if snapped is not None:
             return snapped.point
         return p
+
+    def _refresh_preview(self, event) -> None:
+        """Sobrescrito por cada herramienta."""
+        return None

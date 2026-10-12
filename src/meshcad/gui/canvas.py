@@ -21,7 +21,8 @@ SNAP_TOLERANCE = 8.0  # en pixeles de pantalla
 class CadCanvas(QGraphicsView):
     """Vista grafica donde se dibujan las entidades CAD.
 
-    Delega los eventos de raton en la herramienta activa (si la hay).
+    Delega los eventos de raton en la herramienta activa (si la hay)
+    y mantiene un item temporal de vista previa.
     """
 
     def __init__(self, document: Document, parent=None) -> None:
@@ -32,10 +33,9 @@ class CadCanvas(QGraphicsView):
         self.setMouseTracking(True)
         self.setBackgroundBrush(QBrush(QColor(250, 250, 252)))
 
-        # Herramienta activa (None = modo seleccion)
         self.tool = None
-        # Cache de items de vertices por vertex_id
         self._vertex_items = {}
+        self._preview_item = None
 
         self.document.topology_changed.connect(self._redraw_vertices)
 
@@ -46,8 +46,7 @@ class CadCanvas(QGraphicsView):
             self.tool.cancel()
         self.tool = tool
 
-    def add_geometry(self, geometry) -> None:
-        """Registra la geometria en la topologia y la dibuja."""
+    def add_geometry(self, geometry):
         topo = self.document.topology
 
         v_start = topo.find_vertex_at(geometry.start_point())
@@ -67,7 +66,6 @@ class CadCanvas(QGraphicsView):
         return edge
 
     def snap_to_vertex(self, scene_point: Point2D):
-        """Devuelve el vertice mas cercano dentro de la tolerancia, o None."""
         topo = self.document.topology
         best = None
         best_dist = None
@@ -80,7 +78,6 @@ class CadCanvas(QGraphicsView):
         if best is None:
             return None
 
-        # Convertir tolerancia de pixeles a unidades de escena
         scale = self.transform().m11()
         if scale <= 0:
             return best
@@ -88,6 +85,22 @@ class CadCanvas(QGraphicsView):
         if best_dist is not None and best_dist <= tol_scene:
             return best
         return None
+
+    # ----------------------------- preview ------------------------------- #
+
+    def show_preview(self, geometry) -> None:
+        """Muestra una geometria temporal (rubber band)."""
+        self.clear_preview()
+        if geometry is None:
+            return
+        item = GeometryItem(geometry, preview=True)
+        self.scene().addItem(item)
+        self._preview_item = item
+
+    def clear_preview(self) -> None:
+        if self._preview_item is not None:
+            self.scene().removeItem(self._preview_item)
+            self._preview_item = None
 
     # ------------------------------- eventos ----------------------------- #
 
@@ -114,7 +127,6 @@ class CadCanvas(QGraphicsView):
     # --------------------------- dibujo interno -------------------------- #
 
     def _redraw_vertices(self) -> None:
-        # Eliminar items antiguos
         for item in self._vertex_items.values():
             self.scene().removeItem(item)
         self._vertex_items.clear()

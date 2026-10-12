@@ -6,10 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QPainterPath, QPen
 from PyQt5.QtWidgets import QGraphicsPathItem
 
-from meshcad.core.geometry.arc import Arc
 from meshcad.core.geometry.entity import GeometryEntity
-from meshcad.core.geometry.line import Line
-from meshcad.core.geometry.spline import Spline
 
 SAMPLE_COUNT = 60
 
@@ -26,14 +23,28 @@ def _build_path(geometry: GeometryEntity) -> QPainterPath:
 
 
 class GeometryItem(QGraphicsPathItem):
-    """Item QGraphics que dibuja una entidad geometrica."""
+    """Item QGraphics que dibuja una entidad geometrica.
 
-    def __init__(self, geometry: GeometryEntity, parent=None) -> None:
+    En modo preview la pluma es discontinua y clara, no es seleccionable
+    y tiene un z-value menor para que quede por debajo de la geometria real.
+    """
+
+    def __init__(self, geometry: GeometryEntity, preview: bool = False, parent=None) -> None:
         super().__init__(parent)
         self.geometry = geometry
         self.setPath(_build_path(geometry))
-        pen = QPen(QColor(30, 90, 200))
-        pen.setWidthF(2.0)
-        pen.setCosmetic(True)
+
+        if preview:
+            pen = QPen(QColor(90, 150, 220))
+            pen.setWidthF(1.5)
+            pen.setCosmetic(True)
+            pen.setStyle(Qt.DashLine)
+            self.setZValue(5.0)
+        else:
+            pen = QPen(QColor(30, 90, 200))
+            pen.setWidthF(2.0)
+            pen.setCosmetic(True)
+            self.setFlag(QGraphicsPathItem.ItemIsSelectable, True)
+            self.setZValue(0.0)
+
         self.setPen(pen)
-        self.setFlag(QGraphicsPathItem.ItemIsSelectable, True)
