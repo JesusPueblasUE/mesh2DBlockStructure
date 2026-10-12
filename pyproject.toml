@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meshcad"
+version = "0.0.1"
+description = "Mallador 2D estructurado por bloques con CAD integrado"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "PyQt5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7",
+    "pytest-qt",
+]
+
+[project.scripts]
+meshcad = "meshcad.gui.main_window:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
