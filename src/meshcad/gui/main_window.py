@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QToolBar
 
 from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
+from meshcad.gui.tools.line_tool import LineTool
 
 
 class MainWindow(QMainWindow):
@@ -27,6 +28,12 @@ class MainWindow(QMainWindow):
         self.action_select = QAction("Seleccionar", self)
         self.action_select.triggered.connect(lambda: self.canvas.set_tool(None))
         toolbar.addAction(self.action_select)
+
+        self.action_line = QAction("Linea", self)
+        self.action_line.triggered.connect(
+            lambda: self.canvas.set_tool(LineTool(self.canvas))
+        )
+        toolbar.addAction(self.action_line)
 
 
 def main() -> None:
