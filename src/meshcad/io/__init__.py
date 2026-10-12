@@ -1,4 +1,8 @@
-"""Persistencia (JSON) y exportacion (VTK)."""
+"""Persistencia (JSON) y exportacion (VTK).
+
+Este paquete NO depende de PyQt5. La conversion dict <-> Document
+vive en la capa de GUI.
+"""
 
 from meshcad.io.json_io import (
     block_from_dict,
