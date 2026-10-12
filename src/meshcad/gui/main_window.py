@@ -2,10 +2,13 @@
 
 import sys
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QAction, QApplication, QMainWindow, QToolBar
 
+from meshcad.gui.blocks_panel import BlocksPanel
 from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
+from meshcad.gui.edges_panel import EdgesPanel
 from meshcad.gui.loops_panel import LoopsPanel
 from meshcad.gui.tools.arc_tool import ArcTool
 from meshcad.gui.tools.line_tool import LineTool
@@ -16,14 +19,22 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("MeshCAD")
-        self.resize(1280, 768)
+        self.resize(1400, 800)
 
         self.document = Document()
         self.canvas = CadCanvas(self.document)
         self.setCentralWidget(self.canvas)
 
         self.loops_panel = LoopsPanel(self.document, self.canvas, self)
-        self.addDockWidget(1, self.loops_panel)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.loops_panel)
+
+        self.edges_panel = EdgesPanel(self.document, self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.edges_panel)
+
+        self.blocks_panel = BlocksPanel(self.document, self)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.blocks_panel)
+
+        self.document.topology_changed.connect(self.edges_panel.refresh)
 
         self._create_toolbar()
 
