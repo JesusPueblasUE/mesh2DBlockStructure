@@ -88,6 +88,17 @@ class Topology:
     def edges(self) -> List[Edge]:
         return list(self._edges.values())
 
+    def _load_state(self, vertices, edges) -> None:
+        """Reemplaza el estado interno (uso: deserializacion)."""
+        from itertools import count as _count
+
+        self._vertices = dict(vertices)
+        self._edges = dict(edges)
+        max_v = max(self._vertices.keys(), default=-1)
+        max_e = max(self._edges.keys(), default=-1)
+        self._vertex_ids = _count(max_v + 1)
+        self._edge_ids = _count(max_e + 1)
+
     # ------------------------------- misc ------------------------------- #
 
     def __len__(self) -> int:

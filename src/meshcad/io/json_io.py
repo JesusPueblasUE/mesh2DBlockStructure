@@ -14,6 +14,12 @@ from meshcad.core.mesh.distribution import (
     NodeDistribution,
     UniformDistribution,
 )
+from meshcad.core.mesh.model import EdgeMeshSpec
+from meshcad.core.topology.block import Block
+from meshcad.core.topology.block_side import BlockSide
+from meshcad.core.topology.edge import Edge, OrientedEdge
+from meshcad.core.topology.topology import Topology
+from meshcad.core.topology.vertex import Vertex
 
 
 # ------------------------------- helpers ------------------------------- #
@@ -95,3 +101,99 @@ def distribution_from_dict(data: Dict[str, Any]) -> NodeDistribution:
             from_start=bool(data.get("from_start", True)),
         )
     raise ValueError("Distribucion desconocida: {!r}".format(t))
+
+
+# ------------------------------ topologia ------------------------------ #
+
+
+def topology_to_dict(t: Topology) -> Dict[str, Any]:
+    return {
+        "vertices": [
+            {"id": v.id, "point": _point_to_list(v.point)} for v in t.vertices()
+        ],
+        "edges": [
+            {
+                "id": e.id,
+                "start_vertex_id": e.start_vertex_id,
+                "end_vertex_id": e.end_vertex_id,
+                "geometry": geometry_to_dict(e.geometry),
+            }
+            for e in t.edges()
+        ],
+    }
+
+
+def topology_from_dict(data: Dict[str, Any]) -> Topology:
+    t = Topology()
+    vertices: Dict[int, Vertex] = {}
+    for vd in data.get("vertices", []):
+        v = Vertex(int(vd["id"]), _point_from_list(vd["point"]))
+        vertices[v.id] = v
+    edges: Dict[int, Edge] = {}
+    for ed in data.get("edges", []):
+        g = geometry_from_dict(ed["geometry"])
+        e = Edge(
+            int(ed["id"]),
+            int(ed["start_vertex_id"]),
+            int(ed["end_vertex_id"]),
+            g,
+        )
+        edges[e.id] = e
+    t._load_state(vertices, edges)
+    return t
+
+
+# --------------------------- malla por arista -------------------------- #
+
+
+def edge_spec_to_dict(spec: EdgeMeshSpec) -> Dict[str, Any]:
+    return {
+        "edge_id": spec.edge_id,
+        "n_nodes": spec.n_nodes,
+        "distribution": distribution_to_dict(spec.distribution),
+    }
+
+
+def edge_spec_from_dict(data: Dict[str, Any]) -> EdgeMeshSpec:
+    return EdgeMeshSpec(
+        int(data["edge_id"]),
+        int(data["n_nodes"]),
+        distribution_from_dict(data["distribution"]),
+    )
+
+
+# ------------------------------ bloques -------------------------------- #
+
+
+def block_side_to_dict(side: BlockSide) -> Dict[str, Any]:
+    return {
+        "oriented_edges": [
+            {"edge_id": oe.edge_id, "reversed": oe.reversed}
+            for oe in side.oriented_edges
+        ],
+        "node_count": side.node_count,
+    }
+
+
+def block_side_from_dict(data: Dict[str, Any]) -> BlockSide:
+    oriented = tuple(
+        OrientedEdge(int(oe["edge_id"]), bool(oe.get("reversed", False)))
+        for oe in data["oriented_edges"]
+    )
+    return BlockSide(oriented_edges=oriented, node_count=int(data.get("node_count", 0)))
+
+
+def block_to_dict(block: Block) -> Dict[str, Any]:
+    return {
+        "id": block.id,
+        "sides": [block_side_to_dict(s) for s in block.sides],
+    }
+
+
+def block_from_dict(data: Dict[str, Any]) -> Block:
+    sides = tuple(block_side_from_dict(sd) for sd in data["sides"])
+    if len(sides) != 4:
+        raise ValueError(
+            "El bloque {} no tiene 4 lados en el fichero".format(data.get("id"))
+        )
+    return Block(int(data["id"]), sides)  # type: ignore[arg-type]
