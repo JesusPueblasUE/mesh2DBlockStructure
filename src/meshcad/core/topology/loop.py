@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Iterator, List, Optional, Tuple
+from typing import Iterator, List, Optional, Sequence, Tuple
 
+from meshcad.core.topology.block_side import BlockSide
 from meshcad.core.topology.edge import OrientedEdge
 from meshcad.core.topology.topology import Topology
 
@@ -47,7 +48,6 @@ class Loop:
         return edge.start_vertex_id, edge.end_vertex_id
 
     def ordered_vertex_ids(self, topology: Topology) -> List[int]:
-        """Ids de vertices en orden de recorrido, empezando por el primero."""
         if not self._edges:
             return []
         first_start, _ = self._endpoints(topology, self._edges[0])
@@ -94,6 +94,59 @@ class Loop:
         for oe in self._edges:
             total += topology.get_edge(oe.edge_id).geometry.length()
         return total
+
+    # ------------------------------ blocks ------------------------------ #
+
+    def split_at_corners(
+        self,
+        topology: Topology,
+        corner_vertex_ids: Sequence[int],
+    ) -> Tuple[BlockSide, BlockSide, BlockSide, BlockSide]:
+        """Divide el loop en 4 lados usando 4 vertices como esquinas.
+
+        corner_vertex_ids puede venir en cualquier orden: se reordena
+        segun su posicion a lo largo del loop.
+        """
+        if len(corner_vertex_ids) != 4:
+            raise ValueError("Se necesitan exactamente 4 esquinas")
+        if len(set(corner_vertex_ids)) != 4:
+            raise ValueError("Las 4 esquinas deben ser distintas")
+
+        n_edges = len(self._edges)
+        if n_edges < 4:
+            raise ValueError("Un loop con menos de 4 aristas no forma un bloque")
+
+        vertex_path = self.ordered_vertex_ids(topology)
+
+        positions = []
+        for cid in corner_vertex_ids:
+            idx = None
+            for i in range(n_edges):
+                if vertex_path[i] == cid:
+                    idx = i
+                    break
+            if idx is None:
+                raise ValueError(
+                    "El vertice {} no pertenece al loop".format(cid)
+                )
+            positions.append((idx, cid))
+
+        positions.sort()
+        p0, p1, p2, p3 = [p for p, _ in positions]
+
+        sides_edges = [
+            self._edges[p0:p1],
+            self._edges[p1:p2],
+            self._edges[p2:p3],
+            self._edges[p3:n_edges] + self._edges[0:p0],
+        ]
+
+        if any(len(s) == 0 for s in sides_edges):
+            raise ValueError("Algun lado quedaria vacio: revisa las esquinas")
+
+        return tuple(
+            BlockSide(oriented_edges=tuple(s)) for s in sides_edges
+        )
 
     def __repr__(self) -> str:
         return "Loop(edges={})".format(len(self._edges))
