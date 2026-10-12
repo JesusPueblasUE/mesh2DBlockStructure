@@ -30,7 +30,7 @@ def make_square_topology():
     v3 = t.add_vertex(Point2D(0, 1))
     t.add_edge(v0, v1, Line(v0.point, v1.point))
     t.add_edge(v1, v2, Line(v1.point, v2.point))
-    t.add_edge(v2, v3, Arc(Point2D(0.5, 0.5), 0.5, math.pi / 2, math.pi))
+    t.add_edge(v2, v3, Arc(Point2D(0.5, 1.0), 0.5, 0.0, math.pi))
     t.add_edge(v3, v0, Line(v3.point, v0.point))
     return t
 
