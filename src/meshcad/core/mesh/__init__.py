@@ -7,6 +7,7 @@ from meshcad.core.mesh.distribution import (
 )
 from meshcad.core.mesh.model import EdgeMeshSpec, MeshModel, DEFAULT_N_NODES
 from meshcad.core.mesh.tfi import tfi_grid
+from meshcad.core.mesh.generator import BlockMesh, mesh_block
 
 __all__ = [
     "NodeDistribution",
@@ -16,4 +17,6 @@ __all__ = [
     "MeshModel",
     "DEFAULT_N_NODES",
     "tfi_grid",
+    "BlockMesh",
+    "mesh_block",
 ]
