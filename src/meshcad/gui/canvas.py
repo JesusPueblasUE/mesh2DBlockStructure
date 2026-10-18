@@ -1,17 +1,13 @@
 """Lienzo CAD interactivo basado en QGraphicsView."""
 
 from __future__ import annotations
-
 import math
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import (
-    QGraphicsEllipseItem,
-    QGraphicsPathItem,
-    QGraphicsScene,
-    QGraphicsView,
+    QGraphicsEllipseItem, QGraphicsPathItem, QGraphicsScene, QGraphicsView, 
+    QDialog, QVBoxLayout, QFormLayout, QDoubleSpinBox, QDialogButtonBox
 )
-
 from meshcad.core.geometry.point import Point2D
 from meshcad.gui.document import Document
 from meshcad.gui.items import GeometryItem
@@ -32,7 +28,6 @@ class CadCanvas(QGraphicsView):
         self.setMouseTracking(True)
         self.setBackgroundBrush(QBrush(QColor(250, 250, 252)))
         
-        # Invertir eje Y para que crezca hacia arriba
         self.scale(1, -1)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
@@ -126,6 +121,28 @@ class CadCanvas(QGraphicsView):
         self.scene().addItem(item)
         self._highlight_item = item
 
+    def highlight_edges(self, edge_ids: list) -> None:
+        self.clear_highlight()
+        if not edge_ids:
+            return
+        path = QPainterPath()
+        topo = self.document.topology
+        for eid in edge_ids:
+            geom = topo.get_edge(eid).geometry
+            pts = geom.sample(30)
+            path.moveTo(pts[0].x, pts[0].y)
+            for p in pts[1:]:
+                path.lineTo(p.x, p.y)
+                
+        item = QGraphicsPathItem(path)
+        pen = QPen(QColor(240, 140, 20))
+        pen.setWidthF(3.0)
+        pen.setCosmetic(True)
+        item.setPen(pen)
+        item.setZValue(8.0)
+        self.scene().addItem(item)
+        self._highlight_item = item
+
     def clear_highlight(self) -> None:
         if self._highlight_item is not None:
             self.scene().removeItem(self._highlight_item)
@@ -145,8 +162,7 @@ class CadCanvas(QGraphicsView):
         for bm in block_meshes:
             grid = bm.grid
             n_v = len(grid)
-            if n_v == 0:
-                continue
+            if n_v == 0: continue
             n_u = len(grid[0])
 
             for i in range(n_u):
@@ -174,8 +190,6 @@ class CadCanvas(QGraphicsView):
 
     def _on_mesh_generated(self) -> None:
         self.show_mesh(self.document.block_meshes)
-
-    # ---------------------------- eventos ------------------------------- #
 
     def wheelEvent(self, event) -> None:
         zoom_in_factor = 1.15
@@ -220,6 +234,40 @@ class CadCanvas(QGraphicsView):
 
         super().mousePressEvent(event)
 
+    def mouseDoubleClickEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton and self.tool is None:
+            pos = self.mapToScene(event.pos())
+            p = Point2D(pos.x(), pos.y())
+            v = self.snap_to_vertex(p)
+            if v is not None:
+                dialog = QDialog(self)
+                dialog.setWindowTitle("Editar coordenadas")
+                layout = QVBoxLayout(dialog)
+                form = QFormLayout()
+                spin_x = QDoubleSpinBox()
+                spin_x.setRange(-999999, 999999)
+                spin_x.setDecimals(4)
+                spin_x.setValue(v.point.x)
+                spin_y = QDoubleSpinBox()
+                spin_y.setRange(-999999, 999999)
+                spin_y.setDecimals(4)
+                spin_y.setValue(v.point.y)
+                form.addRow("X:", spin_x)
+                form.addRow("Y:", spin_y)
+                layout.addLayout(form)
+                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+                buttons.accepted.connect(dialog.accept)
+                buttons.rejected.connect(dialog.reject)
+                layout.addWidget(buttons)
+                
+                if dialog.exec_() == QDialog.Accepted:
+                    new_p = Point2D(spin_x.value(), spin_y.value())
+                    self.document.topology.move_vertex(v.id, new_p)
+                    self.document.notify_change()
+                event.accept()
+                return
+        super().mouseDoubleClickEvent(event)
+
     def mouseMoveEvent(self, event) -> None:
         if self._is_panning:
             delta = event.pos() - self._last_mouse_pos
@@ -237,9 +285,7 @@ class CadCanvas(QGraphicsView):
             if self._drag_target[0] == 'vertex':
                 self.document.topology.move_vertex(self._drag_target[1], p)
             else:
-                self.document.topology.move_edge_grip(
-                    self._drag_target[1], self._drag_target[2], p
-                )
+                self.document.topology.move_edge_grip(self._drag_target[1], self._drag_target[2], p)
             self.document.notify_change()
             event.accept()
             return
@@ -269,8 +315,6 @@ class CadCanvas(QGraphicsView):
             return
         super().keyPressEvent(event)
 
-    # --------------------------- dibujo interno -------------------------- #
-
     def drawBackground(self, painter: QPainter, rect) -> None:
         super().drawBackground(painter, rect)
         if not self.show_grid or self.grid_spacing <= 0:
@@ -297,25 +341,18 @@ class CadCanvas(QGraphicsView):
             y += grid_size
 
     def _redraw_all(self) -> None:
-        for item in self._geometry_items:
-            self.scene().removeItem(item)
+        for item in self._geometry_items: self.scene().removeItem(item)
         self._geometry_items.clear()
-
-        for item in self._vertex_items.values():
-            self.scene().removeItem(item)
+        for item in self._vertex_items.values(): self.scene().removeItem(item)
         self._vertex_items.clear()
-
-        for item in self._grip_items:
-            self.scene().removeItem(item)
+        for item in self._grip_items: self.scene().removeItem(item)
         self._grip_items.clear()
 
-        # Aristas
         for edge in self.document.topology.edges():
             item = GeometryItem(edge.geometry)
             self.scene().addItem(item)
             self._geometry_items.append(item)
 
-        # Vertices
         pen_v = QPen(QColor(200, 40, 40))
         brush_v = QBrush(QColor(255, 220, 220))
         for v in self.document.topology.vertices():
@@ -327,7 +364,6 @@ class CadCanvas(QGraphicsView):
             self.scene().addItem(item)
             self._vertex_items[v.id] = item
 
-        # Grips
         pen_g = QPen(QColor(40, 100, 200))
         brush_g = QBrush(QColor(200, 220, 255))
         for edge in self.document.topology.edges():

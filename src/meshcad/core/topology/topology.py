@@ -11,7 +11,6 @@ from meshcad.core.geometry.entity import GeometryEntity
 from meshcad.core.geometry.line import Line
 from meshcad.core.geometry.point import Point2D
 from meshcad.core.geometry.spline import Spline
-from meshcad.core.geometry.vector import Vector2D
 from meshcad.core.topology.edge import Edge
 from meshcad.core.topology.vertex import Vertex
 
@@ -24,8 +23,6 @@ class Topology:
         self._edges: Dict[int, Edge] = {}
         self._vertex_ids = count(0)
         self._edge_ids = count(0)
-
-    # ----------------------------- vertices ----------------------------- #
 
     def add_vertex(self, point: Point2D) -> Vertex:
         v = Vertex(next(self._vertex_ids), point)
@@ -47,19 +44,10 @@ class Topology:
                 return v
         return None
 
-    # ------------------------------ edges ------------------------------- #
-
     def add_edge(self, start_vertex: Vertex, end_vertex: Vertex,
                  geometry: GeometryEntity) -> Edge:
-        if not self.has_vertex(start_vertex.id):
-            raise ValueError("start_vertex no pertenece a esta topologia")
-        if not self.has_vertex(end_vertex.id):
-            raise ValueError("end_vertex no pertenece a esta topologia")
-        if geometry.start_point().distance_to(start_vertex.point) > TOL:
-            raise ValueError("El punto inicial de la geometria no coincide con start_vertex")
-        if geometry.end_point().distance_to(end_vertex.point) > TOL:
-            raise ValueError("El punto final de la geometria no coincide con end_vertex")
-            
+        if not self.has_vertex(start_vertex.id) or not self.has_vertex(end_vertex.id):
+            raise ValueError("vertices extranjeros")
         e = Edge(next(self._edge_ids), start_vertex.id, end_vertex.id, geometry)
         self._edges[e.id] = e
         return e
@@ -73,10 +61,11 @@ class Topology:
     def edges(self) -> List[Edge]:
         return list(self._edges.values())
 
-    # ------------------------- manipulacion ----------------------------- #
+    def remove_edge(self, edge_id: int) -> None:
+        if edge_id in self._edges:
+            del self._edges[edge_id]
 
     def move_vertex(self, vertex_id: int, new_point: Point2D) -> None:
-        """Mueve un vertice y actualiza todas las geometrias conectadas."""
         if vertex_id not in self._vertices:
             return
         self._vertices[vertex_id] = Vertex(vertex_id, new_point)
@@ -90,7 +79,6 @@ class Topology:
                 if isinstance(g, Line):
                     new_g = Line(v_start, v_end)
                 elif isinstance(g, Arc):
-                    # Recalcular el centro para que el arco pase por ambos extremos.
                     d = v_start.distance_to(v_end)
                     R = g.radius
                     if d > 2 * R:
@@ -107,7 +95,6 @@ class Topology:
                     
                     c1 = Point2D(mid.x + h*nx, mid.y + h*ny)
                     c2 = Point2D(mid.x - h*nx, mid.y - h*ny)
-                    # Elegir el centro mas cercano al original para mantener la curvatura
                     new_center = c1 if g.center.distance_to(c1) < g.center.distance_to(c2) else c2
                     
                     a0 = math.atan2(v_start.y - new_center.y, v_start.x - new_center.x)
@@ -126,7 +113,6 @@ class Topology:
                 self._edges[eid] = Edge(eid, edge.start_vertex_id, edge.end_vertex_id, new_g)
 
     def move_edge_grip(self, edge_id: int, grip_index: int, new_point: Point2D) -> None:
-        """Mueve un grip interno (centro de arco, punto interno de spline)."""
         edge = self._edges.get(edge_id)
         if not edge:
             return
@@ -136,7 +122,6 @@ class Topology:
             v_start = self._vertices[edge.start_vertex_id].point
             v_end = self._vertices[edge.end_vertex_id].point
             
-            # Proyectar el nuevo centro sobre la mediatriz de v_start y v_end
             mx = (v_start.x + v_end.x) / 2.0
             my = (v_start.y + v_end.y) / 2.0
             dx = v_end.x - v_start.x
@@ -147,13 +132,11 @@ class Topology:
             if norm > 1e-9:
                 nx /= norm
                 ny /= norm
-                # Proyeccion escalar del punto del raton sobre el vector normal
                 t = (new_point.x - mx) * nx + (new_point.y - my) * ny
                 new_center = Point2D(mx + t * nx, my + t * ny)
             else:
                 new_center = new_point
 
-            # El radio es la distancia desde el nuevo centro a un extremo
             r = new_center.distance_to(v_start)
             a0 = math.atan2(v_start.y - new_center.y, v_start.x - new_center.x)
             a1 = math.atan2(v_end.y - new_center.y, v_end.x - new_center.x)
@@ -177,6 +160,3 @@ class Topology:
 
     def __len__(self) -> int:
         return len(self._vertices) + len(self._edges)
-
-    def __repr__(self) -> str:
-        return "Topology(vertices={}, edges={})".format(len(self._vertices), len(self._edges))

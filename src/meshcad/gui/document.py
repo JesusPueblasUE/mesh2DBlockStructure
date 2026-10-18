@@ -1,7 +1,6 @@
 """Documento: estado del proyecto (topologia, malla y bloques)."""
 
 from __future__ import annotations
-
 from typing import Any, Dict, List, Tuple
 
 from PyQt5.QtCore import QObject, pyqtSignal
@@ -47,6 +46,24 @@ class Document(QObject):
         self.blocks.append(block)
         self.recompute_blocks()
 
+    def remove_block(self, block_id: int) -> None:
+        self.blocks = [b for b in self.blocks if b.id != block_id]
+        self.recompute_blocks()
+        if self.block_meshes:
+            self.generate_mesh()
+        self.blocks_changed.emit()
+
+    def remove_edge(self, edge_id: int) -> bool:
+        for b in self.blocks:
+            for side in b.sides:
+                if edge_id in side.edge_ids():
+                    return False
+        
+        self.topology.remove_edge(edge_id)
+        self.mesh.clear_spec(edge_id)
+        self.notify_change()
+        return True
+
     def recompute_blocks(self) -> None:
         for block in self.blocks:
             for side in block.sides:
@@ -55,6 +72,14 @@ class Document(QObject):
 
     def set_edge_spec(self, spec: EdgeMeshSpec) -> None:
         self.mesh.set_spec(spec)
+        self.mesh_changed.emit()
+        self.recompute_blocks()
+        if self.block_meshes:
+            self.generate_mesh()
+
+    def set_edge_specs(self, specs: List[EdgeMeshSpec]) -> None:
+        for spec in specs:
+            self.mesh.set_spec(spec)
         self.mesh_changed.emit()
         self.recompute_blocks()
         if self.block_meshes:
@@ -72,8 +97,6 @@ class Document(QObject):
             self.block_meshes.append(bm)
         self.mesh_generated.emit()
         return self.block_meshes, errors
-
-    # ---------------------------- persistencia -------------------------- #
 
     def to_dict(self) -> Dict[str, Any]:
         from meshcad.io.json_io import block_to_dict, edge_spec_to_dict, topology_to_dict

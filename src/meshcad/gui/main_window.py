@@ -6,9 +6,11 @@ from pathlib import Path
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QAction, QApplication, QDoubleSpinBox, QFileDialog, QLabel,
-    QMainWindow, QMessageBox, QStatusBar, QToolBar,
+    QMainWindow, QMessageBox, QStatusBar, QToolBar, QDialog, 
+    QVBoxLayout, QFormLayout, QDialogButtonBox
 )
 
+from meshcad.core.geometry.point import Point2D
 from meshcad.gui.blocks_panel import BlocksPanel
 from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
@@ -35,7 +37,7 @@ class MainWindow(QMainWindow):
         self.loops_panel = LoopsPanel(self.document, self.canvas, self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.loops_panel)
 
-        self.edges_panel = EdgesPanel(self.document, self)
+        self.edges_panel = EdgesPanel(self.document, self.canvas, self)
         self.addDockWidget(Qt.RightDockWidgetArea, self.edges_panel)
 
         self.blocks_panel = BlocksPanel(self.document, self)
@@ -61,39 +63,25 @@ class MainWindow(QMainWindow):
 
     def _create_menus(self) -> None:
         file_menu = self.menuBar().addMenu("&Archivo")
-
         self.action_new = QAction("Nuevo", self)
-        self.action_new.setShortcut("Ctrl+N")
         self.action_new.triggered.connect(self._on_new)
         file_menu.addAction(self.action_new)
-
         self.action_open = QAction("Abrir...", self)
-        self.action_open.setShortcut("Ctrl+O")
         self.action_open.triggered.connect(self._on_open)
         file_menu.addAction(self.action_open)
-
         file_menu.addSeparator()
-
         self.action_save = QAction("Guardar", self)
-        self.action_save.setShortcut("Ctrl+S")
         self.action_save.triggered.connect(self._on_save)
         file_menu.addAction(self.action_save)
-
         self.action_save_as = QAction("Guardar como...", self)
-        self.action_save_as.setShortcut("Ctrl+Shift+S")
         self.action_save_as.triggered.connect(self._on_save_as)
         file_menu.addAction(self.action_save_as)
-
         file_menu.addSeparator()
-
         self.action_export_vtk = QAction("Exportar malla (VTK)...", self)
         self.action_export_vtk.triggered.connect(self._on_export_vtk)
         file_menu.addAction(self.action_export_vtk)
-
         file_menu.addSeparator()
-
         self.action_quit = QAction("Salir", self)
-        self.action_quit.setShortcut("Ctrl+Q")
         self.action_quit.triggered.connect(self.close)
         file_menu.addAction(self.action_quit)
 
@@ -106,25 +94,22 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_select)
 
         self.action_line = QAction("Linea", self)
-        self.action_line.triggered.connect(
-            lambda: self.canvas.set_tool(LineTool(self.canvas))
-        )
+        self.action_line.triggered.connect(lambda: self.canvas.set_tool(LineTool(self.canvas)))
         toolbar.addAction(self.action_line)
 
         self.action_arc = QAction("Arco", self)
-        self.action_arc.triggered.connect(
-            lambda: self.canvas.set_tool(ArcTool(self.canvas))
-        )
+        self.action_arc.triggered.connect(lambda: self.canvas.set_tool(ArcTool(self.canvas)))
         toolbar.addAction(self.action_arc)
 
         self.action_spline = QAction("Spline", self)
-        self.action_spline.triggered.connect(
-            lambda: self.canvas.set_tool(SplineTool(self.canvas))
-        )
+        self.action_spline.triggered.connect(lambda: self.canvas.set_tool(SplineTool(self.canvas)))
         toolbar.addAction(self.action_spline)
+        
+        self.action_insert_point = QAction("Insertar Punto", self)
+        self.action_insert_point.triggered.connect(self._on_insert_point)
+        toolbar.addAction(self.action_insert_point)
 
         toolbar.addSeparator()
-
         self.action_mesh = QAction("Generar malla", self)
         self.action_mesh.triggered.connect(self._on_generate_mesh)
         toolbar.addAction(self.action_mesh)
@@ -134,7 +119,6 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_clear_mesh)
 
         toolbar.addSeparator()
-
         self.action_grid = QAction("Ver rejilla", self)
         self.action_grid.setCheckable(True)
         self.action_grid.setChecked(True)
@@ -145,9 +129,33 @@ class MainWindow(QMainWindow):
         self.grid_spin = QDoubleSpinBox()
         self.grid_spin.setRange(0.1, 100.0)
         self.grid_spin.setValue(10.0)
-        self.grid_spin.setSingleStep(1.0)
         self.grid_spin.valueChanged.connect(self._on_grid_spacing_changed)
         toolbar.addWidget(self.grid_spin)
+
+    def _on_insert_point(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Insertar punto")
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+        spin_x = QDoubleSpinBox()
+        spin_x.setRange(-999999, 999999)
+        spin_x.setDecimals(4)
+        spin_x.setValue(0)
+        spin_y = QDoubleSpinBox()
+        spin_y.setRange(-999999, 999999)
+        spin_y.setDecimals(4)
+        spin_y.setValue(0)
+        form.addRow("X:", spin_x)
+        form.addRow("Y:", spin_y)
+        layout.addLayout(form)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        
+        if dialog.exec_() == QDialog.Accepted:
+            self.document.topology.add_vertex(Point2D(spin_x.value(), spin_y.value()))
+            self.document.notify_change()
 
     def _on_toggle_grid(self, checked: bool) -> None:
         self.canvas.show_grid = checked
@@ -169,11 +177,8 @@ class MainWindow(QMainWindow):
         self.status_label.setText("Proyecto nuevo.")
 
     def _on_open(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(
-            self, "Abrir proyecto", "", "MeshCAD (*.json);;Todos (*)"
-        )
-        if not path:
-            return
+        path, _ = QFileDialog.getOpenFileName(self, "Abrir proyecto", "", "MeshCAD (*.json);;Todos (*)")
+        if not path: return
         try:
             data = load_project(path)
             loaded = Document.from_dict(data)
@@ -187,18 +192,12 @@ class MainWindow(QMainWindow):
         self.status_label.setText("Proyecto cargado: {}".format(path))
 
     def _on_save(self) -> None:
-        if self.current_path is None:
-            self._on_save_as()
-            return
-        self._save_to(self.current_path)
+        if self.current_path is None: self._on_save_as()
+        else: self._save_to(self.current_path)
 
     def _on_save_as(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Guardar proyecto como", "proyecto.json", "MeshCAD (*.json);;Todos (*)"
-        )
-        if not path:
-            return
-        self._save_to(Path(path))
+        path, _ = QFileDialog.getSaveFileName(self, "Guardar como", "proyecto.json", "MeshCAD (*.json);;Todos (*)")
+        if path: self._save_to(Path(path))
 
     def _save_to(self, path: Path) -> None:
         try:
@@ -214,11 +213,8 @@ class MainWindow(QMainWindow):
         if not self.document.block_meshes:
             QMessageBox.information(self, "Sin malla", "Genera primero la malla.")
             return
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Exportar malla VTK", "malla.pvd", "ParaView Data (*.pvd);;Todos (*)"
-        )
-        if not path:
-            return
+        path, _ = QFileDialog.getSaveFileName(self, "Exportar VTK", "malla.pvd", "ParaView (*.pvd);;Todos (*)")
+        if not path: return
         try:
             from meshcad.io.vtk_io import export_mesh_vtk
             export_mesh_vtk(self.document.block_meshes, path)
@@ -228,10 +224,8 @@ class MainWindow(QMainWindow):
         self.status_label.setText("Malla exportada a: {}".format(path))
 
     def _update_title(self) -> None:
-        if self.current_path is None:
-            self.setWindowTitle("MeshCAD - sin titulo")
-        else:
-            self.setWindowTitle("MeshCAD - {}".format(self.current_path))
+        if self.current_path is None: self.setWindowTitle("MeshCAD - sin titulo")
+        else: self.setWindowTitle("MeshCAD - {}".format(self.current_path))
 
     def _on_project_replaced(self) -> None:
         self.edges_panel.refresh()
@@ -242,9 +236,7 @@ class MainWindow(QMainWindow):
             self.status_label.setText("Errores: " + "; ".join(errors))
         else:
             total_cells = sum(bm.cell_count() for bm in meshes)
-            self.status_label.setText(
-                "Malla generada: {} bloques, {} celdas".format(len(meshes), total_cells)
-            )
+            self.status_label.setText("Malla generada: {} bloques, {} celdas".format(len(meshes), total_cells))
 
 
 def main() -> None:
@@ -252,7 +244,3 @@ def main() -> None:
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
-
-
-if __name__ == "__main__":
-    main()

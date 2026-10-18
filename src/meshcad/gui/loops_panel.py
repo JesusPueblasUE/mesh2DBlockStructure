@@ -1,17 +1,7 @@
-"""Panel lateral con la lista de loops detectados."""
+"""Panel con la lista de loops detectados."""
 
 from __future__ import annotations
-
-from PyQt5.QtWidgets import (
-    QDockWidget,
-    QLabel,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
-
+from PyQt5.QtWidgets import QDockWidget, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
 from meshcad.core.topology.block import Block
 from meshcad.core.topology.loop_detector import find_loops
 from meshcad.gui.document import Document
@@ -19,8 +9,6 @@ from meshcad.gui.tools.corner_picker import CornerPickerTool
 
 
 class LoopsPanel(QDockWidget):
-    """Dock con la lista de loops y el boton de crear bloque."""
-
     def __init__(self, document: Document, canvas, parent=None) -> None:
         super().__init__("Loops", parent)
         self.document = document
@@ -48,8 +36,6 @@ class LoopsPanel(QDockWidget):
 
         self.setWidget(container)
 
-    # ------------------------------- slots ------------------------------- #
-
     def _on_find(self) -> None:
         self.loops = find_loops(self.document.topology)
         self.list_widget.clear()
@@ -59,14 +45,11 @@ class LoopsPanel(QDockWidget):
         for i, loop in enumerate(self.loops):
             item = QListWidgetItem("Loop {}: {} aristas".format(i, len(loop)))
             self.list_widget.addItem(item)
-        self.status.setText(
-            "Detectados {} loops. Selecciona uno y crea el bloque.".format(
-                len(self.loops)
-            )
-        )
+        self.status.setText("Detectados {} loops. Selecciona uno y crea el bloque.".format(len(self.loops)))
 
     def _on_selection_changed(self, row: int) -> None:
         if row < 0 or row >= len(self.loops):
+            self.canvas.clear_highlight()
             return
         self.canvas.highlight_loop(self.loops[row])
 
@@ -79,9 +62,7 @@ class LoopsPanel(QDockWidget):
         tool = CornerPickerTool(self.canvas, loop, self._on_corners_picked)
         self.canvas.set_tool(tool)
         self._active_loop = loop
-        self.status.setText(
-            "Haz clic en 4 vertices del loop (en cualquier orden)."
-        )
+        self.status.setText("Haz clic en 4 vertices del loop.")
 
     def _on_corners_picked(self, corner_ids) -> None:
         loop = self._active_loop
@@ -93,8 +74,4 @@ class LoopsPanel(QDockWidget):
             self.status.setText("Error: {}".format(e))
             return
         self.document.add_block(block)
-        self.status.setText(
-            "Bloque {} creado con lados [{}]".format(
-                block.id, ", ".join(str(len(s)) for s in block.sides)
-            )
-        )
+        self.status.setText("Bloque {} creado.".format(block.id))
