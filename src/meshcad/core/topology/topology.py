@@ -69,8 +69,22 @@ class Topology:
         return list(self._edges.values())
 
     def remove_edge(self, edge_id: int) -> None:
-        if edge_id in self._edges:
-            del self._edges[edge_id]
+        if edge_id not in self._edges:
+            return
+            
+        edge = self._edges.pop(edge_id)
+        
+        # Comprobar si los vertices han quedado huerfanos (sin otras aristas)
+        used_vertices = set()
+        for e in self._edges.values():
+            used_vertices.add(e.start_vertex_id)
+            used_vertices.add(e.end_vertex_id)
+            
+        if edge.start_vertex_id not in used_vertices:
+            self._vertices.pop(edge.start_vertex_id, None)
+            
+        if edge.end_vertex_id not in used_vertices:
+            self._vertices.pop(edge.end_vertex_id, None)
 
     def move_vertex(self, vertex_id: int, new_point: Point2D) -> None:
         if vertex_id not in self._vertices:
