@@ -133,13 +133,32 @@ class Topology:
         g = edge.geometry
 
         if isinstance(g, Arc) and grip_index == 0:
-            delta = Vector2D(new_point.x - g.center.x, new_point.y - g.center.y)
-            v_start = self._vertices[edge.start_vertex_id].point + delta
-            v_end = self._vertices[edge.end_vertex_id].point + delta
-            self._vertices[edge.start_vertex_id] = Vertex(edge.start_vertex_id, v_start)
-            self._vertices[edge.end_vertex_id] = Vertex(edge.end_vertex_id, v_end)
+            v_start = self._vertices[edge.start_vertex_id].point
+            v_end = self._vertices[edge.end_vertex_id].point
+            
+            # Proyectar el nuevo centro sobre la mediatriz de v_start y v_end
+            mx = (v_start.x + v_end.x) / 2.0
+            my = (v_start.y + v_end.y) / 2.0
+            dx = v_end.x - v_start.x
+            dy = v_end.y - v_start.y
+            
+            nx, ny = -dy, dx
+            norm = math.hypot(nx, ny)
+            if norm > 1e-9:
+                nx /= norm
+                ny /= norm
+                # Proyeccion escalar del punto del raton sobre el vector normal
+                t = (new_point.x - mx) * nx + (new_point.y - my) * ny
+                new_center = Point2D(mx + t * nx, my + t * ny)
+            else:
+                new_center = new_point
 
-            new_g = Arc(new_point, g.radius, g.start_angle, g.end_angle)
+            # El radio es la distancia desde el nuevo centro a un extremo
+            r = new_center.distance_to(v_start)
+            a0 = math.atan2(v_start.y - new_center.y, v_start.x - new_center.x)
+            a1 = math.atan2(v_end.y - new_center.y, v_end.x - new_center.x)
+            
+            new_g = Arc(new_center, max(r, 1e-6), a0, a1)
             self._edges[edge_id] = Edge(edge_id, edge.start_vertex_id, edge.end_vertex_id, new_g)
         elif isinstance(g, Spline):
             pts = list(g.points)

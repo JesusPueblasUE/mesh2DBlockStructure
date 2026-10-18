@@ -35,21 +35,25 @@ def test_move_arc_endpoint_reconnects():
     assert math.isclose(new_arc.end_point().distance_to(Point2D(0, 1)), 0.0, abs_tol=1e-7)
 
 
-def test_move_arc_center_translates():
+def test_move_arc_center_changes_radius():
     t = Topology()
     v0 = t.add_vertex(Point2D(1, 0))
-    v1 = t.add_vertex(Point2D(0, 1))
-    arc = Arc(Point2D(0, 0), 1.0, 0.0, math.pi / 2)
+    v1 = t.add_vertex(Point2D(-1, 0))
+    arc = Arc(Point2D(0, 0), 1.0, 0.0, math.pi)
     e = t.add_edge(v0, v1, arc)
 
-    # Movemos el centro (grip 0) a (1, 1)
-    t.move_edge_grip(e.id, 0, Point2D(1, 1))
+    # Movemos el centro a (0, 1). Debe quedarse en (0, 1) cambiando el radio.
+    t.move_edge_grip(e.id, 0, Point2D(0, 1))
     new_arc = t.get_edge(e.id).geometry
+    
+    # Los extremos NO deben moverse
+    assert t.get_vertex(v0.id).point == Point2D(1, 0)
+    assert t.get_vertex(v1.id).point == Point2D(-1, 0)
+    
     assert isinstance(new_arc, Arc)
-    assert new_arc.center == Point2D(1, 1)
-    # Los extremos tambien se mueven solidariamente
-    assert t.get_vertex(v0.id).point == Point2D(2, 1)
-    assert t.get_vertex(v1.id).point == Point2D(1, 2)
+    assert math.isclose(new_arc.center.x, 0.0, abs_tol=1e-7)
+    assert math.isclose(new_arc.center.y, 1.0, abs_tol=1e-7)
+    assert math.isclose(new_arc.radius, math.sqrt(2), abs_tol=1e-7)
 
 
 def test_move_spline_inner_grip():
