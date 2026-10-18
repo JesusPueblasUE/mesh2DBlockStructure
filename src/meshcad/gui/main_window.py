@@ -45,6 +45,7 @@ class MainWindow(QMainWindow):
 
         self.document.topology_changed.connect(self.edges_panel.refresh)
         self.document.project_replaced.connect(self._on_project_replaced)
+        self.canvas.edge_clicked.connect(self._on_edge_clicked)
 
         status = QStatusBar()
         self.setStatusBar(status)
@@ -60,6 +61,12 @@ class MainWindow(QMainWindow):
 
         self._create_menus()
         self._create_toolbar()
+
+    def _on_edge_clicked(self, edge_id: int) -> None:
+        if edge_id == -1:
+            self.edges_panel.list_widget.clearSelection()
+        else:
+            self.edges_panel.select_edges([edge_id])
 
     def _create_menus(self) -> None:
         file_menu = self.menuBar().addMenu("&Archivo")
@@ -131,6 +138,11 @@ class MainWindow(QMainWindow):
         self.grid_spin.setValue(10.0)
         self.grid_spin.valueChanged.connect(self._on_grid_spacing_changed)
         toolbar.addWidget(self.grid_spin)
+
+        toolbar.addSeparator()
+        self.action_reset_zoom = QAction("Reset Zoom", self)
+        self.action_reset_zoom.triggered.connect(self.canvas.reset_zoom)
+        toolbar.addAction(self.action_reset_zoom)
 
     def _on_insert_point(self) -> None:
         dialog = QDialog(self)
