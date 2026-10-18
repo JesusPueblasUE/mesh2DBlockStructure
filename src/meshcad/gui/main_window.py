@@ -3,11 +3,12 @@
 import sys
 from pathlib import Path
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PyQt5.QtWidgets import (
     QAction, QApplication, QDoubleSpinBox, QFileDialog, QLabel,
     QMainWindow, QMessageBox, QStatusBar, QToolBar, QDialog, 
-    QVBoxLayout, QFormLayout, QDialogButtonBox, QCheckBox, QSpinBox
+    QVBoxLayout, QFormLayout, QDialogButtonBox, QCheckBox, QSpinBox, QStyle
 )
 
 from meshcad.core.geometry.point import Point2D
@@ -189,6 +190,117 @@ class MainWindow(QMainWindow):
                         self.smoothing_relaxation_spin):
             control.valueChanged.connect(self._schedule_live_mesh_update)
         toolbar.addSeparator()
+        self._decorate_toolbar(toolbar)
+
+    # --- toolbar appearance ---
+    def _cad_icon(self, kind: str) -> QIcon:
+        """Crea iconos CAD nitidos sin depender de ficheros externos."""
+        size = 28
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        blue = QColor("#2563EB")
+        dark = QColor("#334155")
+        accent = QColor("#F97316")
+        pen = QPen(blue, 2.2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.setBrush(Qt.NoBrush)
+
+        if kind == "select":
+            points = [(6, 4), (19, 16), (13, 17), (17, 24), (13, 26), (9, 19), (5, 23)]
+            from PyQt5.QtCore import QPointF
+            painter.drawPolygon(*[QPointF(x, y) for x, y in points])
+        elif kind == "line":
+            painter.drawLine(5, 22, 23, 6)
+            painter.setBrush(accent)
+            painter.drawEllipse(3, 20, 5, 5); painter.drawEllipse(20, 3, 5, 5)
+        elif kind == "arc":
+            painter.drawArc(4, 6, 20, 18, 10 * 16, 150 * 16)
+            painter.setBrush(accent)
+            painter.drawEllipse(4, 18, 5, 5); painter.drawEllipse(20, 17, 5, 5)
+        elif kind == "spline":
+            from PyQt5.QtGui import QPainterPath
+            path = QPainterPath(); path.moveTo(3, 20)
+            path.cubicTo(8, 2, 18, 26, 25, 7); painter.drawPath(path)
+            painter.setBrush(accent)
+            for x, y in ((3, 20), (10, 9), (18, 18), (25, 7)):
+                painter.drawEllipse(x - 2, y - 2, 4, 4)
+        elif kind == "point":
+            painter.setPen(QPen(dark, 1.5)); painter.drawLine(14, 3, 14, 25)
+            painter.drawLine(3, 14, 25, 14)
+            painter.setPen(QPen(blue, 2)); painter.setBrush(accent)
+            painter.drawEllipse(10, 10, 8, 8)
+        elif kind == "mesh":
+            painter.setPen(QPen(blue, 1.6))
+            for n in (5, 11, 17, 23):
+                painter.drawLine(n, 4, n, 24); painter.drawLine(4, n, 24, n)
+        elif kind == "clear_mesh":
+            painter.setPen(QPen(blue, 1.2))
+            for n in (6, 11, 16, 21):
+                painter.drawLine(n, 5, n, 23); painter.drawLine(5, n, 23, n)
+            painter.setPen(QPen(QColor("#DC2626"), 3, Qt.SolidLine, Qt.RoundCap))
+            painter.drawLine(6, 6, 22, 22); painter.drawLine(22, 6, 6, 22)
+        elif kind == "grid":
+            painter.setPen(QPen(dark, 1.4))
+            for n in (6, 11, 16, 21):
+                painter.drawLine(n, 4, n, 24); painter.drawLine(4, n, 24, n)
+        elif kind == "zoom":
+            painter.setPen(QPen(blue, 2.2)); painter.drawEllipse(4, 4, 15, 15)
+            painter.drawLine(17, 17, 25, 25)
+            painter.setPen(QPen(accent, 1.8)); painter.drawLine(8, 11, 15, 11)
+            painter.drawLine(11, 8, 11, 15)
+        painter.end()
+        return QIcon(pixmap)
+
+    def _decorate_toolbar(self, toolbar: QToolBar) -> None:
+        """Aplica iconos, atajos visuales y ayuda contextual a la barra."""
+        toolbar.setObjectName("main_toolbar")
+        toolbar.setMovable(True)
+        toolbar.setFloatable(False)
+        toolbar.setIconSize(QSize(24, 24))
+        toolbar.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        toolbar.setStyleSheet(
+            "QToolBar { spacing: 4px; padding: 4px; background: #F8FAFC; "
+            "border-bottom: 1px solid #CBD5E1; }"
+            "QToolButton { padding: 4px 7px; border-radius: 5px; }"
+            "QToolButton:hover { background: #DBEAFE; }"
+            "QToolButton:pressed, QToolButton:checked { background: #BFDBFE; }"
+        )
+
+        entries = (
+            (self.action_select, "select", "Seleccionar y editar geometria", "Selecciona aristas o arrastra vertices y puntos de control."),
+            (self.action_line, "line", "Dibujar linea", "Crea un segmento mediante dos clics: inicio y final."),
+            (self.action_arc, "arc", "Dibujar arco circular", "Crea un arco mediante tres clics: centro, inicio y final."),
+            (self.action_spline, "spline", "Dibujar spline", "Anade puntos con clic izquierdo y finaliza con clic derecho."),
+            (self.action_insert_point, "point", "Insertar punto por coordenadas", "Inserta un vertice indicando sus coordenadas X e Y."),
+            (self.action_mesh, "mesh", "Generar malla", "Genera o actualiza la malla estructurada de todos los bloques."),
+            (self.action_clear_mesh, "clear_mesh", "Ocultar malla", "Retira la malla del lienzo sin borrar la geometria CAD."),
+            (self.action_grid, "grid", "Mostrar u ocultar rejilla", "Activa o desactiva la rejilla de referencia del lienzo."),
+            (self.action_reset_zoom, "zoom", "Encuadrar todo", "Centra y ajusta toda la geometria al area visible."),
+        )
+        for action, icon_name, status_tip, tool_tip in entries:
+            action.setIcon(self._cad_icon(icon_name))
+            action.setToolTip(tool_tip)
+            action.setStatusTip(status_tip)
+
+        self.orthogonal_check.setToolTip(
+            "Fuerza que las lineas interiores sean perpendiculares al contorno."
+        )
+        self.orthogonal_layers_spin.setToolTip(
+            "Numero de capas interiores en las que se aplica la ortogonalizacion."
+        )
+        self.orthogonal_strength_spin.setToolTip(
+            "Intensidad de la correccion ortogonal: 0 no altera; 1 aplica el maximo."
+        )
+        self.smoothing_iterations_spin.setToolTip(
+            "Numero de iteraciones de suavizado eliptico de la malla."
+        )
+        self.smoothing_relaxation_spin.setToolTip(
+            "Factor de relajacion del suavizado; valores bajos producen cambios mas suaves."
+        )
+        self.grid_spin.setToolTip("Separacion entre lineas de la rejilla del lienzo.")
+
     def _on_insert_point(self) -> None:
         dialog = QDialog(self)
         dialog.setWindowTitle("Insertar punto")
