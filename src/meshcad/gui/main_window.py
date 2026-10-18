@@ -5,8 +5,8 @@ from pathlib import Path
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QAction, QApplication, QFileDialog, QLabel, QMainWindow,
-    QMessageBox, QStatusBar, QToolBar,
+    QAction, QApplication, QDoubleSpinBox, QFileDialog, QLabel,
+    QMainWindow, QMessageBox, QStatusBar, QToolBar,
 )
 
 from meshcad.gui.blocks_panel import BlocksPanel
@@ -44,7 +44,6 @@ class MainWindow(QMainWindow):
         self.document.topology_changed.connect(self.edges_panel.refresh)
         self.document.project_replaced.connect(self._on_project_replaced)
 
-        # Barra de estado
         status = QStatusBar()
         self.setStatusBar(status)
         
@@ -142,8 +141,20 @@ class MainWindow(QMainWindow):
         self.action_grid.triggered.connect(self._on_toggle_grid)
         toolbar.addAction(self.action_grid)
 
+        toolbar.addWidget(QLabel(" Espaciado: "))
+        self.grid_spin = QDoubleSpinBox()
+        self.grid_spin.setRange(0.1, 100.0)
+        self.grid_spin.setValue(10.0)
+        self.grid_spin.setSingleStep(1.0)
+        self.grid_spin.valueChanged.connect(self._on_grid_spacing_changed)
+        toolbar.addWidget(self.grid_spin)
+
     def _on_toggle_grid(self, checked: bool) -> None:
         self.canvas.show_grid = checked
+        self.canvas.viewport().update()
+
+    def _on_grid_spacing_changed(self, value: float) -> None:
+        self.canvas.grid_spacing = value
         self.canvas.viewport().update()
 
     def _on_mouse_moved(self, x: float, y: float) -> None:
