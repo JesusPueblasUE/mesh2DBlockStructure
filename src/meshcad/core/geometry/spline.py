@@ -31,8 +31,6 @@ def _catmull_rom(p0: Point2D, p1: Point2D, p2: Point2D, p3: Point2D,
 
 @dataclass(frozen=True)
 class Spline(GeometryEntity):
-    """Spline interpolante Catmull-Rom que pasa por todos los puntos."""
-
     points: Tuple[Point2D, ...]
 
     def __post_init__(self):
@@ -81,3 +79,6 @@ class Spline(GeometryEntity):
         xs = [p.x for p in pts]
         ys = [p.y for p in pts]
         return (Point2D(min(xs), min(ys)), Point2D(max(xs), max(ys)))
+
+    def get_grips(self) -> List[Point2D]:
+        return list(self.points[1:-1])

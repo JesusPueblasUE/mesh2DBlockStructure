@@ -14,13 +14,6 @@ TWO_PI = 2.0 * math.pi
 
 @dataclass(frozen=True)
 class Arc(GeometryEntity):
-    """Arco de circulo definido por centro, radio y angulos (radianes).
-
-    El arco se recorre en sentido antihorario desde start_angle hasta
-    end_angle. Si end_angle < start_angle, el barrido se completa sumando
-    2*pi.
-    """
-
     center: Point2D
     radius: float
     start_angle: float
@@ -73,3 +66,6 @@ class Arc(GeometryEntity):
     def _angle_in_span(self, angle: float) -> bool:
         delta = (angle - self.start_angle) % TWO_PI
         return delta <= self.angle_span() + 1e-9
+
+    def get_grips(self) -> List[Point2D]:
+        return [self.center]

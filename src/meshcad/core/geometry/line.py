@@ -11,8 +11,6 @@ from meshcad.core.geometry.point import Point2D
 
 @dataclass(frozen=True)
 class Line(GeometryEntity):
-    """Segmento de recta definido por dos puntos."""
-
     start: Point2D
     end: Point2D
 
@@ -42,3 +40,6 @@ class Line(GeometryEntity):
             Point2D(min(self.start.x, self.end.x), min(self.start.y, self.end.y)),
             Point2D(max(self.start.x, self.end.x), max(self.start.y, self.end.y)),
         )
+
+    def get_grips(self) -> List[Point2D]:
+        return []

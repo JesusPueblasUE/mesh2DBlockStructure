@@ -13,27 +13,33 @@ class GeometryEntity(ABC):
 
     @abstractmethod
     def start_point(self) -> Point2D:
-        """Punto inicial de la entidad."""
+        pass
 
     @abstractmethod
     def end_point(self) -> Point2D:
-        """Punto final de la entidad."""
+        pass
 
     @abstractmethod
     def length(self) -> float:
-        """Longitud total de la entidad."""
+        pass
 
     @abstractmethod
     def evaluate(self, t: float) -> Point2D:
-        """Evalua la entidad en el parametro normalizado t en [0, 1].
-
-        t=0 devuelve start_point, t=1 devuelve end_point.
-        """
+        pass
 
     @abstractmethod
     def sample(self, n: int) -> List[Point2D]:
-        """Devuelve n puntos equiespaciados en t, incluyendo los extremos."""
+        pass
 
     @abstractmethod
     def bounding_box(self) -> Tuple[Point2D, Point2D]:
-        """Devuelve (min_point, max_point) del rectangulo que la contiene."""
+        pass
+
+    @abstractmethod
+    def get_grips(self) -> List[Point2D]:
+        """Devuelve puntos de control internos (no topologicos).
+
+        Los extremos (start/end) los gestiona la topologia, no la
+        geometria. Para un arco, el grip es el centro. Para una
+        spline, son los puntos de control interiores.
+        """
