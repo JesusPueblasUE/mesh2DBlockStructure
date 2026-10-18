@@ -51,8 +51,18 @@ class Topology:
 
     def add_edge(self, start_vertex: Vertex, end_vertex: Vertex,
                  geometry: GeometryEntity) -> Edge:
-        if not self.has_vertex(start_vertex.id) or not self.has_vertex(end_vertex.id):
-            raise ValueError("vertices extranjeros")
+        if not self.has_vertex(start_vertex.id):
+            raise ValueError("start_vertex no pertenece a esta topologia")
+        if not self.has_vertex(end_vertex.id):
+            raise ValueError("end_vertex no pertenece a esta topologia")
+        if geometry.start_point().distance_to(start_vertex.point) > TOL:
+            raise ValueError(
+                "El punto inicial de la geometria no coincide con start_vertex"
+            )
+        if geometry.end_point().distance_to(end_vertex.point) > TOL:
+            raise ValueError(
+                "El punto final de la geometria no coincide con end_vertex"
+            )
         e = Edge(next(self._edge_ids), start_vertex.id, end_vertex.id, geometry)
         self._edges[e.id] = e
         return e
@@ -135,3 +145,11 @@ class Topology:
         max_e = max(self._edges.keys(), default=-1)
         self._vertex_ids = _count(max_v + 1)
         self._edge_ids = _count(max_e + 1)
+
+    def __len__(self) -> int:
+        return len(self._vertices) + len(self._edges)
+
+    def __repr__(self) -> str:
+        return "Topology(vertices={}, edges={})".format(
+            len(self._vertices), len(self._edges)
+        )

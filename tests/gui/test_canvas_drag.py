@@ -58,4 +58,4 @@ def test_auto_mesh_regen(qtbot):
     assert len(doc.block_meshes) == 1
     new_mesh = doc.block_meshes[0]
     assert new_mesh is not old_mesh
-    assert new_mesh.grid[0][1].x == 2.0
+    assert new_mesh.grid[0][-1].x == 2.0

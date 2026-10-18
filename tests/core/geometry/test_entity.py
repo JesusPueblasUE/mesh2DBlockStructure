@@ -37,6 +37,9 @@ def test_complete_subclass_can_be_instantiated():
 
         def bounding_box(self):
             return (Point2D(0, 0), Point2D(1, 0))
+            
+        def get_grips(self):
+            return []
 
     d = Dummy()
     assert d.length() == 1.0
