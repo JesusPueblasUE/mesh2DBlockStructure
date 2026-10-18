@@ -1,35 +1,20 @@
 """Panel para editar la especificacion de malla de cada arista."""
 
 from __future__ import annotations
-
 from PyQt5.QtWidgets import (
-    QComboBox,
-    QDockWidget,
-    QDoubleSpinBox,
-    QFormLayout,
-    QLabel,
-    QListWidget,
-    QListWidgetItem,
-    QPushButton,
-    QSpinBox,
-    QVBoxLayout,
-    QWidget,
+    QComboBox, QDockWidget, QDoubleSpinBox, QFormLayout, QLabel,
+    QListWidget, QListWidgetItem, QPushButton, QSpinBox, QVBoxLayout, QWidget, QAbstractItemView
 )
-
-from meshcad.core.mesh.distribution import (
-    BiasedDistribution,
-    UniformDistribution,
-)
+from meshcad.core.mesh.distribution import BiasedDistribution, UniformDistribution
 from meshcad.core.mesh.model import EdgeMeshSpec
 from meshcad.gui.document import Document
 
 
 class EdgesPanel(QDockWidget):
-    """Dock con la lista de aristas y sus propiedades de malla."""
-
-    def __init__(self, document: Document, parent=None) -> None:
+    def __init__(self, document: Document, canvas, parent=None) -> None:
         super().__init__("Distribuciones", parent)
         self.document = document
+        self.canvas = canvas
 
         container = QWidget()
         layout = QVBoxLayout(container)
@@ -39,11 +24,11 @@ class EdgesPanel(QDockWidget):
         layout.addWidget(self.refresh_button)
 
         self.list_widget = QListWidget()
-        self.list_widget.currentRowChanged.connect(self._on_selection_changed)
+        self.list_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
         layout.addWidget(self.list_widget)
 
         form = QFormLayout()
-
         self.nodes_spin = QSpinBox()
         self.nodes_spin.setRange(2, 10000)
         self.nodes_spin.setValue(5)
@@ -60,12 +45,15 @@ class EdgesPanel(QDockWidget):
         self.bias_spin.setSingleStep(0.1)
         self.bias_spin.setEnabled(False)
         form.addRow("Bias:", self.bias_spin)
-
         layout.addLayout(form)
 
-        self.apply_button = QPushButton("Aplicar")
+        self.apply_button = QPushButton("Aplicar a seleccionadas")
         self.apply_button.clicked.connect(self._on_apply)
         layout.addWidget(self.apply_button)
+        
+        self.delete_button = QPushButton("Eliminar arista(s) seleccionada(s)")
+        self.delete_button.clicked.connect(self._on_delete)
+        layout.addWidget(self.delete_button)
 
         self.status = QLabel("Refresca para ver las aristas.")
         self.status.setWordWrap(True)
@@ -73,62 +61,91 @@ class EdgesPanel(QDockWidget):
 
         self.setWidget(container)
 
-    # ------------------------------ slots ------------------------------- #
-
     def refresh(self) -> None:
+        self.list_widget.blockSignals(True)
         self.list_widget.clear()
         for edge in self.document.topology.edges():
             spec = self.document.mesh.get_spec(edge.id)
             label = "Edge {}: v{}->v{}, {} nodos, {}".format(
-                edge.id,
-                edge.start_vertex_id,
-                edge.end_vertex_id,
-                spec.n_nodes,
-                self._dist_name(spec.distribution),
+                edge.id, edge.start_vertex_id, edge.end_vertex_id, spec.n_nodes, self._dist_name(spec.distribution)
             )
             self.list_widget.addItem(QListWidgetItem(label))
+        self.list_widget.blockSignals(False)
+        
         if self.list_widget.count() == 0:
             self.status.setText("No hay aristas todavia.")
         else:
-            self.status.setText(
-                "{} aristas. Selecciona una y edita sus propiedades.".format(
-                    self.list_widget.count()
-                )
-            )
+            self.status.setText("{} aristas. Selecciona una o varias.".format(self.list_widget.count()))
 
-    def _on_selection_changed(self, row: int) -> None:
+    def _on_selection_changed(self) -> None:
+        selected_items = self.list_widget.selectedItems()
+        edge_ids = []
         edges = self.document.topology.edges()
-        if row < 0 or row >= len(edges):
-            return
-        spec = self.document.mesh.get_spec(edges[row].id)
-        self.nodes_spin.setValue(spec.n_nodes)
-        if isinstance(spec.distribution, BiasedDistribution):
-            self.dist_combo.setCurrentText("Sesgada")
-            self.bias_spin.setValue(spec.distribution.bias)
-            self.bias_spin.setEnabled(True)
-        else:
-            self.dist_combo.setCurrentText("Uniforme")
-            self.bias_spin.setEnabled(False)
+        
+        for item in selected_items:
+            row = self.list_widget.row(item)
+            if 0 <= row < len(edges):
+                edge_ids.append(edges[row].id)
+                
+        self.canvas.highlight_edges(edge_ids)
+
+        if len(selected_items) == 1:
+            row = self.list_widget.row(selected_items[0])
+            spec = self.document.mesh.get_spec(edges[row].id)
+            self.nodes_spin.setValue(spec.n_nodes)
+            if isinstance(spec.distribution, BiasedDistribution):
+                self.dist_combo.setCurrentText("Sesgada")
+                self.bias_spin.setValue(spec.distribution.bias)
+                self.bias_spin.setEnabled(True)
+            else:
+                self.dist_combo.setCurrentText("Uniforme")
+                self.bias_spin.setEnabled(False)
 
     def _on_dist_changed(self, index: int) -> None:
         self.bias_spin.setEnabled(index == 1)
 
     def _on_apply(self) -> None:
-        row = self.list_widget.currentRow()
-        edges = self.document.topology.edges()
-        if row < 0 or row >= len(edges):
-            self.status.setText("Selecciona primero una arista.")
+        selected_items = self.list_widget.selectedItems()
+        if not selected_items:
+            self.status.setText("Selecciona primero alguna arista.")
             return
-        edge = edges[row]
-        if self.dist_combo.currentText() == "Sesgada":
-            dist = BiasedDistribution(bias=self.bias_spin.value())
-        else:
-            dist = UniformDistribution()
-        spec = EdgeMeshSpec(edge.id, self.nodes_spin.value(), dist)
-        self.document.set_edge_spec(spec)
+            
+        edges = self.document.topology.edges()
+        specs = []
+        for item in selected_items:
+            row = self.list_widget.row(item)
+            if 0 <= row < len(edges):
+                edge = edges[row]
+                if self.dist_combo.currentText() == "Sesgada":
+                    dist = BiasedDistribution(bias=self.bias_spin.value())
+                else:
+                    dist = UniformDistribution()
+                specs.append(EdgeMeshSpec(edge.id, self.nodes_spin.value(), dist))
+                
+        self.document.set_edge_specs(specs)
         self.refresh()
-        self.list_widget.setCurrentRow(row)
-        self.status.setText("Arista {} actualizada.".format(edge.id))
+        self.status.setText("{} aristas actualizadas.".format(len(specs)))
+
+    def _on_delete(self) -> None:
+        selected_items = self.list_widget.selectedItems()
+        if not selected_items:
+            return
+            
+        edges = self.document.topology.edges()
+        success = 0
+        fail = 0
+        for item in selected_items:
+            row = self.list_widget.row(item)
+            if 0 <= row < len(edges):
+                if self.document.remove_edge(edges[row].id):
+                    success += 1
+                else:
+                    fail += 1
+        self.refresh()
+        if fail > 0:
+            self.status.setText("{} aristas borradas. {} no se pudieron borrar porque pertenecen a un bloque.".format(success, fail))
+        else:
+            self.status.setText("{} aristas borradas.".format(success))
 
     @staticmethod
     def _dist_name(dist):
