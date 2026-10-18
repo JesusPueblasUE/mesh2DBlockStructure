@@ -1,4 +1,4 @@
-"""Herramienta interactiva para dibujar splines."""
+"""Interactive tool for drawing splines."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from meshcad.gui.tools.base import BaseTool
 
 
 class SplineTool(BaseTool):
-    """N clics para anadir puntos. Clic derecho para terminar.
+    """N clics for anadir puntos. Clic derecho for terminar.
 
     Muestra la spline en tiempo real a medida que se anaden puntos y
     se mueve el raton.

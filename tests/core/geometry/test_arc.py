@@ -36,13 +36,13 @@ def test_length_semicircle():
 
 
 def test_span_wraps_short():
-    # CCW desde pi hasta -pi/2 (= 3pi/2) recorre pi/2
+    # CCW from pi to -pi/2 (= 3pi/2) recorre pi/2
     arc = Arc(Point2D(0, 0), 1.0, math.pi, -math.pi / 2)
     assert math.isclose(arc.angle_span(), math.pi / 2)
 
 
 def test_span_wraps_long():
-    # CCW desde -pi/2 hasta pi recorre 1.5*pi
+    # CCW from -pi/2 to pi recorre 1.5*pi
     arc = Arc(Point2D(0, 0), 1.0, -math.pi / 2, math.pi)
     assert math.isclose(arc.angle_span(), 1.5 * math.pi)
 

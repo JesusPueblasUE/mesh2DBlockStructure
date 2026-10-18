@@ -1,4 +1,4 @@
-"""Herramienta interactiva para dibujar arcos de circulo."""
+"""Interactive tool for drawing circular arcs."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ EPS = 1e-9
 
 
 class ArcTool(BaseTool):
-    """Tres clics: centro, inicio, fin. Arco CCW con vista previa.
+    """Tres clics: centro, inicio, fin. Arc CCW with vista previa.
 
-    - Con 1 punto (centro) muestra el circulo con radio = distancia al raton.
-    - Con 2 puntos (centro, inicio) muestra el arco hasta el raton.
+    - Con 1 punto (centro) muestra el circulo with radio = distancia al raton.
+    - Con 2 puntos (centro, inicio) muestra el arco to el raton.
     """
 
     def mouse_press(self, event) -> None:

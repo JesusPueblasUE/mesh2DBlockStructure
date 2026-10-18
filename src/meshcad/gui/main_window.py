@@ -1,4 +1,4 @@
-"""Ventana principal de MeshCAD."""
+"""MeshCAD main window."""
 
 import sys
 from pathlib import Path
@@ -27,7 +27,7 @@ from meshcad.io.project_io import load_project, save_project
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("MeshCAD - sin titulo")
+        self.setWindowTitle("MeshCAD - untitled")
         self.resize(1400, 800)
 
         self.document = Document()
@@ -52,7 +52,7 @@ class MainWindow(QMainWindow):
         status = QStatusBar()
         self.setStatusBar(status)
         
-        self.status_label = QLabel("Listo")
+        self.status_label = QLabel("Ready")
         status.addWidget(self.status_label)
         
         self.coords_label = QLabel("X: 0.00, Y: 0.00")
@@ -77,42 +77,42 @@ class MainWindow(QMainWindow):
             self.edges_panel.select_edges([edge_id])
 
     def _create_menus(self) -> None:
-        file_menu = self.menuBar().addMenu("&Archivo")
-        self.action_new = QAction("Nuevo", self)
+        file_menu = self.menuBar().addMenu("&File")
+        self.action_new = QAction("New", self)
         self.action_new.triggered.connect(self._on_new)
         file_menu.addAction(self.action_new)
-        self.action_open = QAction("Abrir...", self)
+        self.action_open = QAction("Open...", self)
         self.action_open.triggered.connect(self._on_open)
         file_menu.addAction(self.action_open)
         file_menu.addSeparator()
-        self.action_save = QAction("Guardar", self)
+        self.action_save = QAction("Save", self)
         self.action_save.triggered.connect(self._on_save)
         file_menu.addAction(self.action_save)
-        self.action_save_as = QAction("Guardar como...", self)
+        self.action_save_as = QAction("Save As...", self)
         self.action_save_as.triggered.connect(self._on_save_as)
         file_menu.addAction(self.action_save_as)
         file_menu.addSeparator()
-        self.action_export_vtk = QAction("Exportar malla (VTK)...", self)
+        self.action_export_vtk = QAction("Export Mesh (VTK)...", self)
         self.action_export_vtk.triggered.connect(self._on_export_vtk)
         file_menu.addAction(self.action_export_vtk)
         file_menu.addSeparator()
-        self.action_quit = QAction("Salir", self)
+        self.action_quit = QAction("Exit", self)
         self.action_quit.triggered.connect(self.close)
         file_menu.addAction(self.action_quit)
 
     def _create_toolbar(self) -> None:
-        toolbar = QToolBar("Herramientas", self)
+        toolbar = QToolBar("Tools", self)
         self.addToolBar(toolbar)
 
-        self.action_select = QAction("Seleccionar", self)
+        self.action_select = QAction("Select", self)
         self.action_select.triggered.connect(lambda: self.canvas.set_tool(None))
         toolbar.addAction(self.action_select)
 
-        self.action_line = QAction("Linea", self)
+        self.action_line = QAction("Line", self)
         self.action_line.triggered.connect(lambda: self.canvas.set_tool(LineTool(self.canvas)))
         toolbar.addAction(self.action_line)
 
-        self.action_arc = QAction("Arco", self)
+        self.action_arc = QAction("Arc", self)
         self.action_arc.triggered.connect(lambda: self.canvas.set_tool(ArcTool(self.canvas)))
         toolbar.addAction(self.action_arc)
 
@@ -120,27 +120,27 @@ class MainWindow(QMainWindow):
         self.action_spline.triggered.connect(lambda: self.canvas.set_tool(SplineTool(self.canvas)))
         toolbar.addAction(self.action_spline)
         
-        self.action_insert_point = QAction("Insertar Punto", self)
+        self.action_insert_point = QAction("Insert Point", self)
         self.action_insert_point.triggered.connect(self._on_insert_point)
         toolbar.addAction(self.action_insert_point)
 
         toolbar.addSeparator()
-        self.action_mesh = QAction("Generar malla", self)
+        self.action_mesh = QAction("Generate Mesh", self)
         self.action_mesh.triggered.connect(self._on_generate_mesh)
         toolbar.addAction(self.action_mesh)
 
-        self.action_clear_mesh = QAction("Borrar malla", self)
+        self.action_clear_mesh = QAction("Clear Mesh", self)
         self.action_clear_mesh.triggered.connect(self.canvas.clear_mesh)
         toolbar.addAction(self.action_clear_mesh)
 
         toolbar.addSeparator()
-        self.action_grid = QAction("Ver rejilla", self)
+        self.action_grid = QAction("Show Grid", self)
         self.action_grid.setCheckable(True)
         self.action_grid.setChecked(True)
         self.action_grid.triggered.connect(self._on_toggle_grid)
         toolbar.addAction(self.action_grid)
 
-        toolbar.addWidget(QLabel(" Espaciado: "))
+        toolbar.addWidget(QLabel(" Spacing: "))
         self.grid_spin = QDoubleSpinBox()
         self.grid_spin.setRange(0.1, 100.0)
         self.grid_spin.setValue(10.0)
@@ -155,28 +155,28 @@ class MainWindow(QMainWindow):
 
         # --- live mesh controls ---
         toolbar.addSeparator()
-        self.orthogonal_check = QCheckBox("Ortogonal")
-        self.orthogonal_check.setToolTip("Impone perpendicularidad cerca del contorno")
+        self.orthogonal_check = QCheckBox("Orthogonal")
+        self.orthogonal_check.setToolTip("Enforces perpendicularity near the boundary")
         toolbar.addWidget(self.orthogonal_check)
-        toolbar.addWidget(QLabel(" Capas: "))
+        toolbar.addWidget(QLabel(" Layers: "))
         self.orthogonal_layers_spin = QSpinBox()
         self.orthogonal_layers_spin.setRange(1, 20)
         self.orthogonal_layers_spin.setMaximumWidth(58)
         toolbar.addWidget(self.orthogonal_layers_spin)
-        toolbar.addWidget(QLabel(" Intensidad: "))
+        toolbar.addWidget(QLabel(" Strength: "))
         self.orthogonal_strength_spin = QDoubleSpinBox()
         self.orthogonal_strength_spin.setRange(0.0, 1.0)
         self.orthogonal_strength_spin.setSingleStep(0.05)
         self.orthogonal_strength_spin.setDecimals(2)
         self.orthogonal_strength_spin.setMaximumWidth(72)
         toolbar.addWidget(self.orthogonal_strength_spin)
-        toolbar.addWidget(QLabel(" Suavizado: "))
+        toolbar.addWidget(QLabel(" Smoothing: "))
         self.smoothing_iterations_spin = QSpinBox()
         self.smoothing_iterations_spin.setRange(0, 2000)
         self.smoothing_iterations_spin.setSingleStep(5)
         self.smoothing_iterations_spin.setMaximumWidth(72)
         toolbar.addWidget(self.smoothing_iterations_spin)
-        toolbar.addWidget(QLabel(" Relajacion: "))
+        toolbar.addWidget(QLabel(" Relaxation: "))
         self.smoothing_relaxation_spin = QDoubleSpinBox()
         self.smoothing_relaxation_spin.setRange(0.05, 1.0)
         self.smoothing_relaxation_spin.setSingleStep(0.05)
@@ -194,7 +194,7 @@ class MainWindow(QMainWindow):
 
     # --- toolbar appearance ---
     def _cad_icon(self, kind: str) -> QIcon:
-        """Crea iconos CAD nitidos sin depender de ficheros externos."""
+        """Crea iconos CAD nitidos without depender de ficheros externos."""
         size = 28
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.transparent)
@@ -269,15 +269,15 @@ class MainWindow(QMainWindow):
         )
 
         entries = (
-            (self.action_select, "select", "Seleccionar y editar geometria", "Selecciona aristas o arrastra vertices y puntos de control."),
-            (self.action_line, "line", "Dibujar linea", "Crea un segmento mediante dos clics: inicio y final."),
-            (self.action_arc, "arc", "Dibujar arco circular", "Crea un arco mediante tres clics: centro, inicio y final."),
-            (self.action_spline, "spline", "Dibujar spline", "Anade puntos con clic izquierdo y finaliza con clic derecho."),
-            (self.action_insert_point, "point", "Insertar punto por coordenadas", "Inserta un vertice indicando sus coordenadas X e Y."),
-            (self.action_mesh, "mesh", "Generar malla", "Genera o actualiza la malla estructurada de todos los bloques."),
-            (self.action_clear_mesh, "clear_mesh", "Ocultar malla", "Retira la malla del lienzo sin borrar la geometria CAD."),
-            (self.action_grid, "grid", "Mostrar u ocultar rejilla", "Activa o desactiva la rejilla de referencia del lienzo."),
-            (self.action_reset_zoom, "zoom", "Encuadrar todo", "Centra y ajusta toda la geometria al area visible."),
+            (self.action_select, "select", "Select y editar geometry", "Select edges or drag vertices and control points."),
+            (self.action_line, "line", "Dibujar linea", "Create a segment with two clicks: start and end."),
+            (self.action_arc, "arc", "Dibujar arco circular", "Create an arc with three clicks: center, start, and end."),
+            (self.action_spline, "spline", "Dibujar spline", "Add points with left-click and finish with right-click."),
+            (self.action_insert_point, "point", "Insert Point por coordenadas", "Insert a vertex by entering its X and Y coordinates."),
+            (self.action_mesh, "mesh", "Generate Mesh", "Generate or update the structured mesh for all blocks."),
+            (self.action_clear_mesh, "clear_mesh", "Ocultar mesh", "Remove the mesh from the canvas without deleting CAD geometry."),
+            (self.action_grid, "grid", "Mostrar u ocultar rejilla", "Show or hide the canvas reference grid."),
+            (self.action_reset_zoom, "zoom", "Encuadrar todo", "Center and fit all geometry in the visible area."),
         )
         for action, icon_name, status_tip, tool_tip in entries:
             action.setIcon(self._cad_icon(icon_name))
@@ -288,22 +288,22 @@ class MainWindow(QMainWindow):
             "Fuerza que las lineas interiores sean perpendiculares al contorno."
         )
         self.orthogonal_layers_spin.setToolTip(
-            "Numero de capas interiores en las que se aplica la ortogonalizacion."
+            "Number of inner layers affected by orthogonalization."
         )
         self.orthogonal_strength_spin.setToolTip(
-            "Intensidad de la correccion ortogonal: 0 no altera; 1 aplica el maximo."
+            "Orthogonal correction strength: 0 leaves unchanged; 1 applies the maximum."
         )
         self.smoothing_iterations_spin.setToolTip(
-            "Numero de iteraciones de suavizado eliptico de la malla."
+            "Number of elliptic mesh-smoothing iterations."
         )
         self.smoothing_relaxation_spin.setToolTip(
-            "Factor de relajacion del suavizado; valores bajos producen cambios mas suaves."
+            "Smoothing relaxation factor; lower values produce gentler changes."
         )
-        self.grid_spin.setToolTip("Separacion entre lineas de la rejilla del lienzo.")
+        self.grid_spin.setToolTip("Spacing between canvas grid lines.")
 
     def _on_insert_point(self) -> None:
         dialog = QDialog(self)
-        dialog.setWindowTitle("Insertar punto")
+        dialog.setWindowTitle("Insert Point")
         layout = QVBoxLayout(dialog)
         form = QFormLayout()
         spin_x = QDoubleSpinBox()
@@ -343,57 +343,57 @@ class MainWindow(QMainWindow):
         self.canvas.clear_mesh()
         self.canvas.clear_highlight()
         self._update_title()
-        self.status_label.setText("Proyecto nuevo.")
+        self.status_label.setText("New project.")
 
     def _on_open(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "Abrir proyecto", "", "MeshCAD (*.json);;Todos (*)")
+        path, _ = QFileDialog.getOpenFileName(self, "Open Project", "", "MeshCAD (*.json);;All Files (*)")
         if not path: return
         try:
             data = load_project(path)
             loaded = Document.from_dict(data)
         except Exception as e:
-            QMessageBox.critical(self, "Error al abrir", str(e))
+            QMessageBox.critical(self, "Open Error", str(e))
             return
         self.document.load_from(loaded)
         self.current_path = Path(path)
         self.canvas.clear_mesh()
         self._update_title()
-        self.status_label.setText("Proyecto cargado: {}".format(path))
+        self.status_label.setText("Project loaded: {}".format(path))
 
     def _on_save(self) -> None:
         if self.current_path is None: self._on_save_as()
         else: self._save_to(self.current_path)
 
     def _on_save_as(self) -> None:
-        path, _ = QFileDialog.getSaveFileName(self, "Guardar como", "proyecto.json", "MeshCAD (*.json);;Todos (*)")
+        path, _ = QFileDialog.getSaveFileName(self, "Save As", "project.json", "MeshCAD (*.json);;All Files (*)")
         if path: self._save_to(Path(path))
 
     def _save_to(self, path: Path) -> None:
         try:
             save_project(self.document.to_dict(), path)
         except Exception as e:
-            QMessageBox.critical(self, "Error al guardar", str(e))
+            QMessageBox.critical(self, "Save Error", str(e))
             return
         self.current_path = path
         self._update_title()
-        self.status_label.setText("Guardado en: {}".format(path))
+        self.status_label.setText("Saved to: {}".format(path))
 
     def _on_export_vtk(self) -> None:
         if not self.document.block_meshes:
-            QMessageBox.information(self, "Sin malla", "Genera primero la malla.")
+            QMessageBox.information(self, "No Mesh", "Generate the mesh first.")
             return
-        path, _ = QFileDialog.getSaveFileName(self, "Exportar VTK", "malla.pvd", "ParaView (*.pvd);;Todos (*)")
+        path, _ = QFileDialog.getSaveFileName(self, "Export VTK", "mesh.pvd", "ParaView (*.pvd);;All Files (*)")
         if not path: return
         try:
             from meshcad.io.vtk_io import export_mesh_vtk
             export_mesh_vtk(self.document.block_meshes, path)
         except Exception as e:
-            QMessageBox.critical(self, "Error al exportar", str(e))
+            QMessageBox.critical(self, "Export Error", str(e))
             return
-        self.status_label.setText("Malla exportada a: {}".format(path))
+        self.status_label.setText("Mesh exported to: {}".format(path))
 
     def _update_title(self) -> None:
-        if self.current_path is None: self.setWindowTitle("MeshCAD - sin titulo")
+        if self.current_path is None: self.setWindowTitle("MeshCAD - untitled")
         else: self.setWindowTitle("MeshCAD - {}".format(self.current_path))
 
     def _on_project_replaced(self) -> None:
@@ -401,12 +401,12 @@ class MainWindow(QMainWindow):
         self._sync_mesh_controls_from_document()
 
     def _schedule_live_mesh_update(self, *args) -> None:
-        """Agrupa cambios rapidos para regenerar la malla una sola vez."""
+        """Debounce rapid changes so the mesh is regenerated only once."""
         if not self._updating_mesh_controls:
             self._mesh_update_timer.start()
 
     def _apply_live_mesh_options(self) -> None:
-        """Actualiza opciones y regenera la malla sin boton Apply."""
+        """Update options and regenerate the mesh without an Apply button."""
         self.document.mesh_improvement = SmoothingOptions(
             orthogonal=self.orthogonal_check.isChecked(),
             orthogonal_layers=self.orthogonal_layers_spin.value(),
@@ -417,10 +417,10 @@ class MainWindow(QMainWindow):
         if self.document.blocks:
             self._on_generate_mesh()
         else:
-            self.status_label.setText("Parametros actualizados; aun no hay bloques.")
+            self.status_label.setText("Parameters updated; no blocks exist yet.")
 
     def _sync_mesh_controls_from_document(self) -> None:
-        """Carga en la barra los parametros del proyecto actual."""
+        """Load current project parameters into the toolbar."""
         self._updating_mesh_controls = True
         try:
             options = self.document.mesh_improvement
@@ -435,10 +435,10 @@ class MainWindow(QMainWindow):
     def _on_generate_mesh(self) -> None:
         meshes, errors = self.document.generate_mesh()
         if errors:
-            self.status_label.setText("Errores: " + "; ".join(errors))
+            self.status_label.setText("Errors: " + "; ".join(errors))
         else:
             total_cells = sum(bm.cell_count() for bm in meshes)
-            self.status_label.setText("Malla generada: {} bloques, {} celdas".format(len(meshes), total_cells))
+            self.status_label.setText("Mesh generated: {} blocks, {} cells".format(len(meshes), total_cells))
 
 
 def main() -> None:

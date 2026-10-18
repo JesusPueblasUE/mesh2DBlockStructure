@@ -1,4 +1,4 @@
-"""Loop cerrado: secuencia de aristas orientadas que forman un contorno."""
+"""Loop cerrado: secuencia de edges orientadas que forman un contorno."""
 
 from __future__ import annotations
 
@@ -10,10 +10,10 @@ from meshcad.core.topology.topology import Topology
 
 
 class Loop:
-    """Contorno cerrado formado por aristas orientadas.
+    """Contorno cerrado formado por edges orientadas.
 
-    Las aristas se referencian por id (no se copian), de modo que varios
-    loops pueden compartir exactamente la misma arista.
+    Las edges se referencian por id (no se copian), de modo que varios
+    loops pueden compartir exactamente la misma edge.
     """
 
     def __init__(self, oriented_edges: Optional[List[OrientedEdge]] = None) -> None:
@@ -78,14 +78,14 @@ class Loop:
 
     def validate(self, topology: Topology) -> None:
         if not self._edges:
-            raise ValueError("El loop no tiene aristas")
+            raise ValueError("The loop has no edges")
         for oe in self._edges:
             if not topology.has_edge(oe.edge_id):
                 raise ValueError(
-                    "Arista {} no existe en la topologia".format(oe.edge_id)
+                    "Arista {} does not exist in the topology".format(oe.edge_id)
                 )
         if not self.is_closed(topology):
-            raise ValueError("El loop no esta cerrado")
+            raise ValueError("The loop is not closed")
 
     # ------------------------------ metrics ----------------------------- #
 
@@ -102,19 +102,19 @@ class Loop:
         topology: Topology,
         corner_vertex_ids: Sequence[int],
     ) -> Tuple[BlockSide, BlockSide, BlockSide, BlockSide]:
-        """Divide el loop en 4 lados usando 4 vertices como esquinas.
+        """Divide el loop en 4 lados usando 4 vertices como corners.
 
-        corner_vertex_ids puede venir en cualquier orden: se reordena
+        corner_vertex_ids can venir en cualquier orden: se reordena
         segun su posicion a lo largo del loop.
         """
         if len(corner_vertex_ids) != 4:
-            raise ValueError("Se necesitan exactamente 4 esquinas")
+            raise ValueError("Exactly four corners are required")
         if len(set(corner_vertex_ids)) != 4:
-            raise ValueError("Las 4 esquinas deben ser distintas")
+            raise ValueError("The four corners must be distinct")
 
         n_edges = len(self._edges)
         if n_edges < 4:
-            raise ValueError("Un loop con menos de 4 aristas no forma un bloque")
+            raise ValueError("A loop with fewer than four edges cannot form a block")
 
         vertex_path = self.ordered_vertex_ids(topology)
 
@@ -127,7 +127,7 @@ class Loop:
                     break
             if idx is None:
                 raise ValueError(
-                    "El vertice {} no pertenece al loop".format(cid)
+                    "El vertex {} does not belong to the loop".format(cid)
                 )
             positions.append((idx, cid))
 
@@ -142,7 +142,7 @@ class Loop:
         ]
 
         if any(len(s) == 0 for s in sides_edges):
-            raise ValueError("Algun lado quedaria vacio: revisa las esquinas")
+            raise ValueError("A side would be empty; review the selected corners")
 
         return tuple(
             BlockSide(oriented_edges=tuple(s)) for s in sides_edges

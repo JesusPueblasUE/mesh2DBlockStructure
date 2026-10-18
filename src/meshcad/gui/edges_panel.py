@@ -1,4 +1,4 @@
-"""Panel para editar la especificacion de malla de cada arista."""
+"""Panel for editing the mesh specification of each edge."""
 
 from __future__ import annotations
 from PyQt5.QtWidgets import (
@@ -12,14 +12,14 @@ from meshcad.gui.document import Document
 
 class EdgesPanel(QDockWidget):
     def __init__(self, document: Document, canvas, parent=None) -> None:
-        super().__init__("Distribuciones", parent)
+        super().__init__("Distributions", parent)
         self.document = document
         self.canvas = canvas
 
         container = QWidget()
         layout = QVBoxLayout(container)
 
-        self.refresh_button = QPushButton("Refrescar aristas")
+        self.refresh_button = QPushButton("Refresh Edges")
         self.refresh_button.clicked.connect(self.refresh)
         layout.addWidget(self.refresh_button)
 
@@ -32,12 +32,12 @@ class EdgesPanel(QDockWidget):
         self.nodes_spin = QSpinBox()
         self.nodes_spin.setRange(2, 10000)
         self.nodes_spin.setValue(5)
-        form.addRow("Nodos:", self.nodes_spin)
+        form.addRow("Nodes:", self.nodes_spin)
 
         self.dist_combo = QComboBox()
-        self.dist_combo.addItems(["Uniforme", "Sesgada"])
+        self.dist_combo.addItems(["Uniform", "Biased"])
         self.dist_combo.currentIndexChanged.connect(self._on_dist_changed)
-        form.addRow("Distribucion:", self.dist_combo)
+        form.addRow("Distribution:", self.dist_combo)
 
         self.bias_spin = QDoubleSpinBox()
         self.bias_spin.setRange(0.01, 100.0)
@@ -47,15 +47,15 @@ class EdgesPanel(QDockWidget):
         form.addRow("Bias:", self.bias_spin)
         layout.addLayout(form)
 
-        self.apply_button = QPushButton("Aplicar a seleccionadas")
+        self.apply_button = QPushButton("Apply to Selected")
         self.apply_button.clicked.connect(self._on_apply)
         layout.addWidget(self.apply_button)
         
-        self.delete_button = QPushButton("Eliminar arista(s) seleccionada(s)")
+        self.delete_button = QPushButton("Delete Selected Edge(s)")
         self.delete_button.clicked.connect(self._on_delete)
         layout.addWidget(self.delete_button)
 
-        self.status = QLabel("Refresca para ver las aristas.")
+        self.status = QLabel("Refresh to display edges.")
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
 
@@ -79,16 +79,16 @@ class EdgesPanel(QDockWidget):
         self.list_widget.clear()
         for edge in self.document.topology.edges():
             spec = self.document.mesh.get_spec(edge.id)
-            label = "Edge {}: v{}->v{}, {} nodos, {}".format(
+            label = "Edge {}: v{}->v{}, {} nodes, {}".format(
                 edge.id, edge.start_vertex_id, edge.end_vertex_id, spec.n_nodes, self._dist_name(spec.distribution)
             )
             self.list_widget.addItem(QListWidgetItem(label))
         self.list_widget.blockSignals(False)
         
         if self.list_widget.count() == 0:
-            self.status.setText("No hay aristas todavia.")
+            self.status.setText("No edges yet.")
         else:
-            self.status.setText("{} aristas. Selecciona una o varias.".format(self.list_widget.count()))
+            self.status.setText("{} edges. Select one or more.".format(self.list_widget.count()))
 
     def _on_selection_changed(self) -> None:
         selected_items = self.list_widget.selectedItems()
@@ -107,11 +107,11 @@ class EdgesPanel(QDockWidget):
             spec = self.document.mesh.get_spec(edges[row].id)
             self.nodes_spin.setValue(spec.n_nodes)
             if isinstance(spec.distribution, BiasedDistribution):
-                self.dist_combo.setCurrentText("Sesgada")
+                self.dist_combo.setCurrentText("Biased")
                 self.bias_spin.setValue(spec.distribution.bias)
                 self.bias_spin.setEnabled(True)
             else:
-                self.dist_combo.setCurrentText("Uniforme")
+                self.dist_combo.setCurrentText("Uniform")
                 self.bias_spin.setEnabled(False)
 
     def _on_dist_changed(self, index: int) -> None:
@@ -120,7 +120,7 @@ class EdgesPanel(QDockWidget):
     def _on_apply(self) -> None:
         selected_items = self.list_widget.selectedItems()
         if not selected_items:
-            self.status.setText("Selecciona primero alguna arista.")
+            self.status.setText("Select at least one edge first.")
             return
             
         edges = self.document.topology.edges()
@@ -129,7 +129,7 @@ class EdgesPanel(QDockWidget):
             row = self.list_widget.row(item)
             if 0 <= row < len(edges):
                 edge = edges[row]
-                if self.dist_combo.currentText() == "Sesgada":
+                if self.dist_combo.currentText() == "Biased":
                     dist = BiasedDistribution(bias=self.bias_spin.value())
                 else:
                     dist = UniformDistribution()
@@ -137,7 +137,7 @@ class EdgesPanel(QDockWidget):
                 
         self.document.set_edge_specs(specs)
         self.refresh()
-        self.status.setText("{} aristas actualizadas.".format(len(specs)))
+        self.status.setText("{} edges updated.".format(len(specs)))
 
     def _on_delete(self) -> None:
         selected_items = self.list_widget.selectedItems()
@@ -157,12 +157,12 @@ class EdgesPanel(QDockWidget):
         self.refresh()
         
         if fail > 0:
-            self.status.setText("{} aristas borradas. {} no se pudieron borrar porque pertenecen a un bloque.".format(success, fail))
+            self.status.setText("{} edges deleted. {} could not be deleted because they belong to a block.".format(success, fail))
         else:
-            self.status.setText("{} aristas borradas.".format(success))
+            self.status.setText("{} edges deleted.".format(success))
 
     @staticmethod
     def _dist_name(dist):
         if isinstance(dist, BiasedDistribution):
-            return "sesgada({:g})".format(dist.bias)
-        return "uniforme"
+            return "biased({:g})".format(dist.bias)
+        return "uniform"

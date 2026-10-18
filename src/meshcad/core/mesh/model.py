@@ -1,4 +1,4 @@
-"""Modelo de malla: distribuciones por arista y consultas por lado."""
+"""Mesh model: per-edge distributions and side queries."""
 
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ DEFAULT_N_NODES = 5
 
 @dataclass
 class EdgeMeshSpec:
-    """Especificacion de malla de una arista.
+    """Especificacion de mesh de a edge.
 
-    n_nodes es el numero total de nodos, incluyendo ambos extremos.
+    n_nodes es el number total de nodes, incluyendo ambos extremos.
     distribution define como se reparten en el parametro t en [0, 1].
     """
 
@@ -30,14 +30,14 @@ class EdgeMeshSpec:
 
     def __post_init__(self):
         if self.n_nodes < 2:
-            raise ValueError("n_nodes debe ser >= 2")
+            raise ValueError("n_nodes must be >= 2")
 
 
 class MeshModel:
-    """Distribuciones de nodos asociadas a las aristas.
+    """Distributions de nodes asociadas a las edges.
 
-    Una misma arista puede pertenecer a varios bloques; la distribucion
-    se guarda una sola vez y todos los bloques la comparten.
+    Una misma edge can pertenecer a varios blocks; la distribucion
+    se guarda a sola vez y all los blocks la comparten.
     """
 
     def __init__(self) -> None:
@@ -60,11 +60,11 @@ class MeshModel:
     # ----------------------------- consultas ---------------------------- #
 
     def side_node_count(self, side: BlockSide) -> int:
-        """Numero de nodos de un lado concatenando sus aristas.
+        """Number of nodes de un lado concatenando sus edges.
 
-        Si el lado tiene k aristas con n_0, ..., n_{k-1} nodos cada una,
-        el total es sum(n_i) - (k - 1), porque los extremos de aristas
-        consecutivas se solapan en un vertice.
+        Si el lado tiene k edges with n_0, ..., n_{k-1} nodes cada a,
+        el total es sum(n_i) - (k - 1), porque los extremos de edges
+        consecutivas se solapan en un vertex.
         """
         if not side.oriented_edges:
             return 0
@@ -75,7 +75,7 @@ class MeshModel:
         return total
 
     def side_samples(self, side: BlockSide, topology: Topology) -> List[Point2D]:
-        """Puntos a lo largo de un lado, en el orden de recorrido."""
+        """Points along a side in traversal order."""
         samples: List[Point2D] = []
         for i, oe in enumerate(side.oriented_edges):
             edge = topology.get_edge(oe.edge_id)

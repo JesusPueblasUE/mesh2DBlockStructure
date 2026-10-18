@@ -1,10 +1,10 @@
-"""La capa io solo trata con dicts; no importa Qt."""
+"""La capa io only trata with dicts; no importa Qt."""
 
 import sys
 
 
 def test_io_package_does_not_import_qt():
-    """Importar meshcad.io no debe arrastrar PyQt5."""
+    """Importar meshcad.io no must arrastrar PyQt5."""
     for name in list(sys.modules):
         if name.startswith("PyQt5") or name.startswith("meshcad.gui"):
             del sys.modules[name]

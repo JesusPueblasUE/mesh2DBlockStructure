@@ -1,4 +1,4 @@
-"""Herramienta para elegir 4 esquinas de un loop."""
+"""Tool for selecting four corners of a loop."""
 
 from __future__ import annotations
 

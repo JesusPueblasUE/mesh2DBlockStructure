@@ -1,4 +1,4 @@
-"""Panel con la lista de loops detectados."""
+"""Panel listing detected loops."""
 
 from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QLabel, QListWidget, QListWidgetItem, QPushButton, QVBoxLayout, QWidget
@@ -18,7 +18,7 @@ class LoopsPanel(QDockWidget):
         container = QWidget()
         layout = QVBoxLayout(container)
 
-        self.find_button = QPushButton("Detectar loops")
+        self.find_button = QPushButton("Detect Loops")
         self.find_button.clicked.connect(self._on_find)
         layout.addWidget(self.find_button)
 
@@ -26,11 +26,11 @@ class LoopsPanel(QDockWidget):
         self.list_widget.currentRowChanged.connect(self._on_selection_changed)
         layout.addWidget(self.list_widget)
 
-        self.create_button = QPushButton("Crear bloque del loop")
+        self.create_button = QPushButton("Create Block from Loop")
         self.create_button.clicked.connect(self._on_create_block)
         layout.addWidget(self.create_button)
 
-        self.status = QLabel("Pulsa 'Detectar loops'.")
+        self.status = QLabel("Click 'Detect Loops'.")
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
 
@@ -40,12 +40,12 @@ class LoopsPanel(QDockWidget):
         self.loops = find_loops(self.document.topology)
         self.list_widget.clear()
         if not self.loops:
-            self.status.setText("No se han detectado loops cerrados.")
+            self.status.setText("No closed loops were detected.")
             return
         for i, loop in enumerate(self.loops):
-            item = QListWidgetItem("Loop {}: {} aristas".format(i, len(loop)))
+            item = QListWidgetItem("Loop {}: {} edges".format(i, len(loop)))
             self.list_widget.addItem(item)
-        self.status.setText("Detectados {} loops. Selecciona uno y crea el bloque.".format(len(self.loops)))
+        self.status.setText("Detected {} loops. Select one and create the block.".format(len(self.loops)))
 
     def _on_selection_changed(self, row: int) -> None:
         if row < 0 or row >= len(self.loops):
@@ -56,13 +56,13 @@ class LoopsPanel(QDockWidget):
     def _on_create_block(self) -> None:
         row = self.list_widget.currentRow()
         if row < 0 or row >= len(self.loops):
-            self.status.setText("Selecciona primero un loop.")
+            self.status.setText("Select a loop first.")
             return
         loop = self.loops[row]
         tool = CornerPickerTool(self.canvas, loop, self._on_corners_picked)
         self.canvas.set_tool(tool)
         self._active_loop = loop
-        self.status.setText("Haz clic en 4 vertices del loop.")
+        self.status.setText("Click four vertices on the loop.")
 
     def _on_corners_picked(self, corner_ids) -> None:
         loop = self._active_loop
@@ -74,4 +74,4 @@ class LoopsPanel(QDockWidget):
             self.status.setText("Error: {}".format(e))
             return
         self.document.add_block(block)
-        self.status.setText("Bloque {} creado.".format(block.id))
+        self.status.setText("Bloque {} created.".format(block.id))

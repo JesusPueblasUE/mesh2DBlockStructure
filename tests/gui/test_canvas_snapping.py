@@ -5,7 +5,7 @@ from meshcad.gui.document import Document
 
 
 def test_snap_to_vertex(qtbot):
-    """El canvas debe encontrar el vertice mas cercano dentro de tolerancia."""
+    """El canvas must encontrar el vertex mas cercano inside de tolerancia."""
     from meshcad.gui.canvas import CadCanvas
 
     doc = Document()
@@ -14,7 +14,7 @@ def test_snap_to_vertex(qtbot):
 
     v = doc.topology.add_vertex(Point2D(0.0, 0.0))
 
-    # Con tolerancia por defecto, un punto cercano debe hacer snap
+    # Con tolerancia por defecto, un punto cercano must hacer snap
     near = Point2D(0.5, 0.5)
     snapped = canvas.snap_to_vertex(near)
     assert snapped is v

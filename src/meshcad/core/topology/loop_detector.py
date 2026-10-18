@@ -1,4 +1,4 @@
-"""Deteccion automatica de loops simples en la topologia."""
+"""Automatic detection of simple loops in the topology."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from meshcad.core.topology.topology import Topology
 
 
 def _canonical(edge_ids: Tuple[int, ...]) -> Tuple[int, ...]:
-    """Clave canonica de un ciclo: minima entre todas las rotaciones y su inversa."""
+    """Clave canonica de un ciclo: minima entre all las rotaciones y su inversa."""
     n = len(edge_ids)
     forms = []
     for i in range(n):
@@ -23,9 +23,9 @@ def _canonical(edge_ids: Tuple[int, ...]) -> Tuple[int, ...]:
 
 
 def find_loops(topology: Topology, max_loops: int = 50) -> List[Loop]:
-    """Encuentra loops simples (ciclos sin vertices repetidos salvo el inicio).
+    """Encuentra loops simples (ciclos without vertices repetidos salvo el inicio).
 
-    Devuelve una lista de Loop con los OrientedEdge ya orientados segun
+    Devuelve a lista de Loop with los OrientedEdge ya orientados segun
     el recorrido encontrado.
     """
     adj = defaultdict(list)

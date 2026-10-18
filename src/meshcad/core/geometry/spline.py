@@ -1,4 +1,4 @@
-"""Spline interpolante (Catmull-Rom) por una lista de puntos."""
+"""Catmull-Rom interpolating spline through a list of points."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ class Spline(GeometryEntity):
 
     def __post_init__(self):
         if len(self.points) < 2:
-            raise ValueError("Una spline necesita al menos 2 puntos")
+            raise ValueError("Una spline requires at least two points")
 
     def start_point(self) -> Point2D:
         return self.points[0]
@@ -65,7 +65,7 @@ class Spline(GeometryEntity):
 
     def sample(self, n: int) -> List[Point2D]:
         if n < 2:
-            raise ValueError("n debe ser >= 2")
+            raise ValueError("n must be >= 2")
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
     def length(self) -> float:

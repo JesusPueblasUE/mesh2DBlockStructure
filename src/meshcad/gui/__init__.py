@@ -1,1 +1,1 @@
-"""Capa de interfaz grafica basada en PyQt5."""
+"""PyQt5-based graphical interface layer."""

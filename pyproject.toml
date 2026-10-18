@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "meshcad"
 version = "1.0.0"
-description = "Mallador 2D estructurado por bloques con CAD integrado"
+description = "2D block-structured mesh generator with integrated CAD"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [

@@ -1,4 +1,4 @@
-"""Lado de un bloque estructurado: secuencia de aristas orientadas."""
+"""Structured block side: sequence of oriented edges."""
 
 from __future__ import annotations
 
@@ -12,11 +12,11 @@ from meshcad.core.topology.edge import OrientedEdge
 class BlockSide:
     """Un lado de un bloque estructurado.
 
-    El lado es una secuencia de OrientedEdge que se recorre de principio
-    a fin. Varias aristas pueden componer un mismo lado.
+    El lado es a secuencia de OrientedEdge que se recorre de start
+    a fin. Varias edges pueden componer un same lado.
 
-    node_count es el numero de nodos que tendra la malla a lo largo de
-    este lado. De momento vale 0 (sin asignar) hasta la fase de
+    node_count es el number de nodes que tendra la mesh a lo largo de
+    este lado. De momento vale 0 (without asignar) to la fase de
     distribuciones.
     """
 

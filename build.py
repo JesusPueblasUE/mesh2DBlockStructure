@@ -1,9 +1,9 @@
-"""Construye el ejecutable con PyInstaller.
+"""Build the executable with PyInstaller.
 
-Uso:
+Usage:
     python build.py
 
-Requiere: pip install pyinstaller
+Requires: pip install pyinstaller
 """
 
 import subprocess
@@ -16,7 +16,7 @@ ROOT = Path(__file__).parent
 def main() -> None:
     spec = ROOT / "meshcad.spec"
     if not spec.exists():
-        print("ERROR: no existe meshcad.spec")
+        print("ERROR: meshcad.spec does not exist")
         sys.exit(1)
     cmd = [sys.executable, "-m", "PyInstaller", str(spec), "--noconfirm"]
     print("  $ " + " ".join(cmd))
@@ -24,7 +24,7 @@ def main() -> None:
     if r.returncode != 0:
         sys.exit(r.returncode)
     print()
-    print("Ejecutable generado en dist/MeshCAD/")
+    print("Executable generated in dist/MeshCAD/")
 
 
 if __name__ == "__main__":

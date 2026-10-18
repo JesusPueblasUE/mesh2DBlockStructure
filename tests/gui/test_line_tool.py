@@ -54,7 +54,7 @@ def test_line_tool_preview_after_first_click():
     canvas = make_canvas()
     tool = LineTool(canvas)
     tool.mouse_press(FakeMouseEvent(0, 0))
-    # Tras el primer clic debe existir un preview
+    # Tras el primer clic must existir un preview
     assert len(canvas.previews) == 1
     # Mover el raton actualiza el preview
     tool.mouse_move(FakeMouseEvent(5, 5))

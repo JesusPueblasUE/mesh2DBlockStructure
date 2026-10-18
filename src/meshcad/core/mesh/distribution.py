@@ -1,4 +1,4 @@
-"""Distribuciones de nodos a lo largo de una entidad geometrica."""
+"""Node distributions along a geometric entity."""
 
 from __future__ import annotations
 
@@ -11,15 +11,15 @@ from meshcad.core.geometry.point import Point2D
 
 
 class NodeDistribution(ABC):
-    """Interfaz de las distribuciones de nodos.
+    """Interfaz de las distribuciones de nodes.
 
-    Una distribucion produce una lista de parametros t en [0, 1],
-    estrictamente creciente, con el primero igual a 0 y el ultimo a 1.
+    Una distribucion produce a lista de parametros t en [0, 1],
+    estrictamente creciente, with el first igual a 0 y el ultimo a 1.
     """
 
     @abstractmethod
     def positions(self, n: int) -> List[float]:
-        """Devuelve n parametros en [0, 1] con extremos fijos."""
+        """Devuelve n parametros en [0, 1] with extremos fijos."""
 
     def sample(self, geometry: GeometryEntity, n: int) -> List[Point2D]:
         return [geometry.evaluate(t) for t in self.positions(n)]
@@ -33,17 +33,17 @@ class UniformDistribution(NodeDistribution):
 
     def positions(self, n: int) -> List[float]:
         if n < 2:
-            raise ValueError("n debe ser >= 2")
+            raise ValueError("n must be >= 2")
         return [i / (n - 1) for i in range(n)]
 
 
 @dataclass(frozen=True)
 class BiasedDistribution(NodeDistribution):
-    """Distribucion con espaciado geometrico.
+    """Distribucion with espaciado geometrico.
 
-    Los intervalos entre nodos crecen en progresion geometrica de razon
-    'bias'. bias=1.0 equivale a uniforme. bias>1 concentra nodos al
-    principio (from_start=True) o al final (from_start=False).
+    Los intervalos entre nodes crecen en progresion geometrica de razon
+    'bias'. bias=1.0 equivale a uniform. bias>1 concentra nodes al
+    start (from_start=True) o al end (from_start=False).
     """
 
     bias: float = 2.0
@@ -51,11 +51,11 @@ class BiasedDistribution(NodeDistribution):
 
     def __post_init__(self):
         if self.bias <= 0:
-            raise ValueError("bias debe ser > 0")
+            raise ValueError("bias must ser > 0")
 
     def positions(self, n: int) -> List[float]:
         if n < 2:
-            raise ValueError("n debe ser >= 2")
+            raise ValueError("n must be >= 2")
 
         if abs(self.bias - 1.0) < 1e-12:
             return [i / (n - 1) for i in range(n)]

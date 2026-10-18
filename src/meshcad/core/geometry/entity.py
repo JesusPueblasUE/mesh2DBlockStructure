@@ -1,4 +1,4 @@
-"""Clase base abstracta para las entidades geometricas 2D."""
+"""Abstract base class for 2D geometric entities."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from meshcad.core.geometry.point import Point2D
 
 
 class GeometryEntity(ABC):
-    """Interfaz comun a todas las entidades geometricas 2D."""
+    """Interfaz comun a all las entidades geometricas 2D."""
 
     @abstractmethod
     def start_point(self) -> Point2D:
@@ -37,9 +37,9 @@ class GeometryEntity(ABC):
 
     @abstractmethod
     def get_grips(self) -> List[Point2D]:
-        """Devuelve puntos de control internos (no topologicos).
+        """Return internal, non-topological control points.
 
-        Los extremos (start/end) los gestiona la topologia, no la
-        geometria. Para un arco, el grip es el centro. Para una
-        spline, son los puntos de control interiores.
+        The start and end points are managed by topology, not by
+        geometry. For an arc, the grip is its center. For a
+        spline, the grips are the internal control points.
         """

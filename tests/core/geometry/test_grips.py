@@ -30,7 +30,7 @@ def test_move_arc_endpoint_reconnects():
     t.move_vertex(v0.id, Point2D(2, 0))
     new_arc = t.get_edge(e.id).geometry
     assert isinstance(new_arc, Arc)
-    # El arco se recalcula para pasar exactamente por los dos extremos
+    # El arco se recalcula for pasar exactamente por los dos extremos
     assert math.isclose(new_arc.start_point().distance_to(Point2D(2, 0)), 0.0, abs_tol=1e-7)
     assert math.isclose(new_arc.end_point().distance_to(Point2D(0, 1)), 0.0, abs_tol=1e-7)
 
@@ -42,7 +42,7 @@ def test_move_arc_center_changes_radius():
     arc = Arc(Point2D(0, 0), 1.0, 0.0, math.pi)
     e = t.add_edge(v0, v1, arc)
 
-    # Movemos el centro a (0, 1). Debe quedarse en (0, 1) cambiando el radio.
+    # Movemos el centro a (0, 1). Must quedarse en (0, 1) cambiando el radio.
     t.move_edge_grip(e.id, 0, Point2D(0, 1))
     new_arc = t.get_edge(e.id).geometry
     

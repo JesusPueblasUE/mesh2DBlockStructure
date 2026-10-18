@@ -1,4 +1,4 @@
-"""Ortogonalizacion de contornos y suavizado eliptico de mallas 2D."""
+"""Boundary orthogonalization and elliptic smoothing for 2D meshes."""
 from __future__ import annotations
 import math
 from dataclasses import dataclass
@@ -15,10 +15,10 @@ class SmoothingOptions:
     relaxation: float = 0.45
     orthogonal_strength: float = 0.85
     def __post_init__(self):
-        if self.orthogonal_layers < 1: raise ValueError("orthogonal_layers debe ser >= 1")
-        if self.smoothing_iterations < 0: raise ValueError("smoothing_iterations debe ser >= 0")
-        if not 0.0 < self.relaxation <= 1.0: raise ValueError("relaxation debe estar en (0, 1]")
-        if not 0.0 <= self.orthogonal_strength <= 1.0: raise ValueError("orthogonal_strength debe estar en [0, 1]")
+        if self.orthogonal_layers < 1: raise ValueError("orthogonal_layers must ser >= 1")
+        if self.smoothing_iterations < 0: raise ValueError("smoothing_iterations must ser >= 0")
+        if not 0.0 < self.relaxation <= 1.0: raise ValueError("relaxation must estar en (0, 1]")
+        if not 0.0 <= self.orthogonal_strength <= 1.0: raise ValueError("orthogonal_strength must estar en [0, 1]")
 
 def _copy(g): return [[Point2D(p.x, p.y) for p in row] for row in g]
 

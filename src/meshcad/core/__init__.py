@@ -1,1 +1,1 @@
-"""Nucleo del programa. Independiente de PyQt5."""
+"""Application core. Independent of PyQt5."""

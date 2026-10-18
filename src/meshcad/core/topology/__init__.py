@@ -1,4 +1,4 @@
-"""Topologia CAD: Vertex, Edge, Loop, BlockSide, Block."""
+"""CAD topology: Vertex, Edge, Loop, BlockSide, and Block."""
 
 from meshcad.core.topology.vertex import Vertex
 from meshcad.core.topology.edge import Edge, OrientedEdge

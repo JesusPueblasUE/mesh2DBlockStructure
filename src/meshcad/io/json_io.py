@@ -1,4 +1,4 @@
-"""Serializacion JSON de geometria, topologia, malla y bloques."""
+"""JSON serialization of geometry, topology, mesh, and blocks."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def _point_from_list(data) -> Point2D:
     return Point2D(float(data[0]), float(data[1]))
 
 
-# ------------------------------ geometria ------------------------------ #
+# ------------------------------ geometry ------------------------------ #
 
 
 def geometry_to_dict(g: GeometryEntity) -> Dict[str, Any]:
@@ -56,7 +56,7 @@ def geometry_to_dict(g: GeometryEntity) -> Dict[str, Any]:
             "type": "spline",
             "points": [_point_to_list(p) for p in g.points],
         }
-    raise TypeError("Tipo de geometria no serializable: {}".format(type(g).__name__))
+    raise TypeError("Non-serializable geometry type: {}".format(type(g).__name__))
 
 
 def geometry_from_dict(data: Dict[str, Any]) -> GeometryEntity:
@@ -73,7 +73,7 @@ def geometry_from_dict(data: Dict[str, Any]) -> GeometryEntity:
     if t == "spline":
         pts = tuple(_point_from_list(p) for p in data["points"])
         return Spline(pts)
-    raise ValueError("Tipo de geometria desconocido: {!r}".format(t))
+    raise ValueError("Unknown geometry type: {!r}".format(t))
 
 
 # --------------------------- distribuciones ---------------------------- #
@@ -88,7 +88,7 @@ def distribution_to_dict(d: NodeDistribution) -> Dict[str, Any]:
             "bias": d.bias,
             "from_start": d.from_start,
         }
-    raise TypeError("Distribucion no serializable: {}".format(type(d).__name__))
+    raise TypeError("Non-serializable distribution: {}".format(type(d).__name__))
 
 
 def distribution_from_dict(data: Dict[str, Any]) -> NodeDistribution:
@@ -100,10 +100,10 @@ def distribution_from_dict(data: Dict[str, Any]) -> NodeDistribution:
             bias=float(data["bias"]),
             from_start=bool(data.get("from_start", True)),
         )
-    raise ValueError("Distribucion desconocida: {!r}".format(t))
+    raise ValueError("Unknown distribution: {!r}".format(t))
 
 
-# ------------------------------ topologia ------------------------------ #
+# ------------------------------ topology ------------------------------ #
 
 
 def topology_to_dict(t: Topology) -> Dict[str, Any]:
@@ -143,7 +143,7 @@ def topology_from_dict(data: Dict[str, Any]) -> Topology:
     return t
 
 
-# --------------------------- malla por arista -------------------------- #
+# --------------------------- mesh por edge -------------------------- #
 
 
 def edge_spec_to_dict(spec: EdgeMeshSpec) -> Dict[str, Any]:
@@ -162,7 +162,7 @@ def edge_spec_from_dict(data: Dict[str, Any]) -> EdgeMeshSpec:
     )
 
 
-# ------------------------------ bloques -------------------------------- #
+# ------------------------------ blocks -------------------------------- #
 
 
 def block_side_to_dict(side: BlockSide) -> Dict[str, Any]:
@@ -194,6 +194,6 @@ def block_from_dict(data: Dict[str, Any]) -> Block:
     sides = tuple(block_side_from_dict(sd) for sd in data["sides"])
     if len(sides) != 4:
         raise ValueError(
-            "El bloque {} no tiene 4 lados en el fichero".format(data.get("id"))
+            "Block {} does not have four sides in the file".format(data.get("id"))
         )
     return Block(int(data["id"]), sides)  # type: ignore[arg-type]

@@ -76,7 +76,7 @@ def test_generate_mesh_reports_mismatch(qtbot):
     sides = loop.split_at_corners(t, [v0.id, v1.id, v2.id, v3.id])
     doc.add_block(Block(doc.next_block_id(), sides))
 
-    # Desajuste lados 0/2 (inyectado directamente para saltar la propagacion)
+    # Desajuste lados 0/2 (inyectado directamente for saltar la propagacion)
     doc.mesh.set_spec(EdgeMeshSpec(e0.id, 4, UniformDistribution()))
     doc.mesh.set_spec(EdgeMeshSpec(e2.id, 6, UniformDistribution()))
     doc.mesh.set_spec(EdgeMeshSpec(e1.id, 4, UniformDistribution()))

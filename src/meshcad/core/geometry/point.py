@@ -1,4 +1,4 @@
-"""Punto en el plano 2D."""
+"""Point in the 2D plane."""
 
 from __future__ import annotations
 

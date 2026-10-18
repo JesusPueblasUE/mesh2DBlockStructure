@@ -49,10 +49,10 @@ def test_two_adjacent_squares_share_edge():
     t.add_edge(v5, v4, Line(v5.point, v4.point))
     t.add_edge(v4, v3, Line(v4.point, v3.point))
     t.add_edge(v3, v0, Line(v3.point, v0.point))
-    t.add_edge(v1, v4, Line(v1.point, v4.point))  # arista compartida
+    t.add_edge(v1, v4, Line(v1.point, v4.point))  # edge shared
 
     loops = find_loops(t)
-    # Debe encontrar al menos los dos cuadrados y el rectangulo exterior.
+    # Must encontrar al menos los dos cuadrados y el rectangle exterior.
     assert len(loops) >= 2
     for loop in loops:
         assert loop.is_closed(t)

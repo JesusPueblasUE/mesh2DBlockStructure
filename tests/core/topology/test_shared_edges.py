@@ -1,8 +1,8 @@
-"""Prueba que dos loops pueden compartir exactamente la misma arista.
+"""Prueba que dos loops pueden compartir exactamente la misma edge.
 
-Esta es la propiedad fundamental para el mallador: si dos bloques
-comparten una arista, esa arista es un unico objeto Edge y por tanto
-tendra una unica distribucion de nodos.
+Esta es la propiedad fundamental for el mallador: si dos blocks
+comparten a edge, esa edge es un single objeto Edge y por tanto
+tendra a single distribucion de nodes.
 """
 
 from meshcad.core.geometry.line import Line
@@ -12,7 +12,7 @@ from meshcad.core.topology.topology import Topology
 
 
 def build_two_squares():
-    """Dos cuadrados que comparten la arista vertical central.
+    """Dos cuadrados que comparten la edge vertical central.
 
     Topologia (vertices):
         v2(0,1) --- v3(1,1) --- v4(2,1)
@@ -21,7 +21,7 @@ def build_two_squares():
 
     Cuadrado izquierdo: v0 -> v1 -> v3 -> v2 -> v0
     Cuadrado derecho:   v1 -> v5 -> v4 -> v3 -> v1
-    Arista compartida:  v1 -> v3
+    Arista shared:  v1 -> v3
     """
     t = Topology()
     v0 = t.add_vertex(Point2D(0, 0))
@@ -49,7 +49,7 @@ def build_two_squares():
     right.add_edge(e_shared.id, reversed=True)   # v1 -> v3 invertida: v3 -> v1
     # En realidad queremos v1 -> v5 -> v4 -> v3 -> v1, veamos:
     # e_shared va de v1 a v3; la necesitamos en sentido v3 -> v1 -> reversed
-    # Reconstruimos right desde v1:
+    # Reconstruimos right from v1:
     right = Loop()
     right.add_edge(e_bottom_right.id)            # v1 -> v5
     right.add_edge(e_right.id)                   # v5 -> v4
@@ -73,12 +73,12 @@ def test_right_square_is_closed():
 
 def test_shared_edge_is_the_same_object():
     t, left, right, e_shared = build_two_squares()
-    # La arista compartida aparece en ambos loops con el mismo id.
+    # La edge shared aparece en ambos loops with el same id.
     left_ids = [oe.edge_id for oe in left]
     right_ids = [oe.edge_id for oe in right]
     assert e_shared.id in left_ids
     assert e_shared.id in right_ids
-    # Y es literalmente el mismo objeto en la topologia.
+    # Y es literalmente el same objeto en la topology.
     assert t.get_edge(e_shared.id) is e_shared
 
 

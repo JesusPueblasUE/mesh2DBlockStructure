@@ -1,8 +1,8 @@
-"""Guardar y cargar proyectos en formato JSON (puro dict).
+"""Save and load projects in JSON format (plain dictionaries).
 
 Este modulo NO depende de la GUI: recibe y devuelve diccionarios.
 La conversion dict <-> Document vive en la capa de GUI, que es la
-unica que conoce Qt. Asi `meshcad.io` se puede importar sin tener
+single que conoce Qt. Asi `meshcad.io` se can importar without tener
 PyQt5 instalado.
 """
 
@@ -14,7 +14,7 @@ from typing import Any, Dict
 
 
 def save_project(data: Dict[str, Any], path) -> None:
-    """Escribe un proyecto serializado en disco como JSON."""
+    """Write a serialized project to disk as JSON."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -24,6 +24,6 @@ def save_project(data: Dict[str, Any], path) -> None:
 
 
 def load_project(path) -> Dict[str, Any]:
-    """Lee un proyecto desde disco y devuelve su diccionario."""
+    """Read a project from disk and return its dictionary."""
     path = Path(path)
     return json.loads(path.read_text(encoding="utf-8"))

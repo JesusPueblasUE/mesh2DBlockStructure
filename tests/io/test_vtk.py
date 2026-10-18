@@ -32,17 +32,17 @@ def build_meshed_document(n_nodes=4):
 
 def test_export_creates_pvd_and_blocks_dir(tmp_path):
     doc = build_meshed_document()
-    pvd = tmp_path / "malla.pvd"
+    pvd = tmp_path / "mesh.pvd"
     export_mesh_vtk(doc.block_meshes, pvd)
     assert pvd.exists()
-    blocks_dir = tmp_path / "malla_blocks"
+    blocks_dir = tmp_path / "mesh_blocks"
     assert blocks_dir.is_dir()
     assert (blocks_dir / "block_0000.vts").exists()
 
 
 def test_pvd_contains_reference(tmp_path):
     doc = build_meshed_document()
-    pvd = tmp_path / "malla.pvd"
+    pvd = tmp_path / "mesh.pvd"
     export_mesh_vtk(doc.block_meshes, pvd)
     content = pvd.read_text(encoding="utf-8")
     assert "block_0000.vts" in content
@@ -51,9 +51,9 @@ def test_pvd_contains_reference(tmp_path):
 
 def test_vts_contains_structured_grid(tmp_path):
     doc = build_meshed_document(n_nodes=4)
-    pvd = tmp_path / "malla.pvd"
+    pvd = tmp_path / "mesh.pvd"
     export_mesh_vtk(doc.block_meshes, pvd)
-    vts = (tmp_path / "malla_blocks" / "block_0000.vts").read_text(encoding="utf-8")
+    vts = (tmp_path / "mesh_blocks" / "block_0000.vts").read_text(encoding="utf-8")
     assert "StructuredGrid" in vts
     assert 'WholeExtent="0 3 0 3 0 0"' in vts
     assert "Float64" in vts
@@ -61,8 +61,8 @@ def test_vts_contains_structured_grid(tmp_path):
 
 def test_export_multiple_blocks(tmp_path):
     doc = build_meshed_document()
-    pvd = tmp_path / "malla.pvd"
+    pvd = tmp_path / "mesh.pvd"
     export_mesh_vtk(doc.block_meshes, pvd)
-    blocks_dir = tmp_path / "malla_blocks"
+    blocks_dir = tmp_path / "mesh_blocks"
     vts_files = sorted(blocks_dir.glob("*.vts"))
     assert len(vts_files) == len(doc.block_meshes)

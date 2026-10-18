@@ -1,4 +1,4 @@
-"""Generacion de malla estructurada y distribuciones de nodos."""
+"""Structured mesh generation and node distributions."""
 
 from meshcad.core.mesh.distribution import (
     BiasedDistribution,

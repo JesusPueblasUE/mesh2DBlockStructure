@@ -13,7 +13,7 @@ from meshcad.core.topology.topology import Topology
 
 
 def build_square_block(n_nodes=4):
-    """Cuadrado [0,1]x[0,1] con 4 aristas y un bloque."""
+    """Cuadrado [0,1]x[0,1] with 4 edges y un bloque."""
     t = Topology()
     v0 = t.add_vertex(Point2D(0, 0))
     v1 = t.add_vertex(Point2D(1, 0))
@@ -83,7 +83,7 @@ def test_mesh_block_with_different_counts_per_direction():
 
 
 def test_adjacent_blocks_are_conformal():
-    """Dos cuadrados que comparten arista deben dar la misma linea de nodos."""
+    """Dos cuadrados que comparten edge deben dar la misma linea de nodes."""
     t = Topology()
     # Cuadrado izquierdo
     v0 = t.add_vertex(Point2D(0, 0))
@@ -95,7 +95,7 @@ def test_adjacent_blocks_are_conformal():
     v5 = t.add_vertex(Point2D(2, 1))
 
     e_bottom_left = t.add_edge(v0, v1, Line(v0.point, v1.point))
-    e_shared = t.add_edge(v1, v2, Line(v1.point, v2.point))       # compartida
+    e_shared = t.add_edge(v1, v2, Line(v1.point, v2.point))       # shared
     e_top_left = t.add_edge(v2, v3, Line(v2.point, v3.point))
     e_left = t.add_edge(v3, v0, Line(v3.point, v0.point))
     e_bottom_right = t.add_edge(v1, v4, Line(v1.point, v4.point))

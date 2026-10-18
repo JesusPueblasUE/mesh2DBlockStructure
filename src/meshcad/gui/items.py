@@ -1,4 +1,4 @@
-"""Items graficos que representan entidades geometricas en la escena."""
+"""Graphics items representing geometric entities in the scene."""
 
 from __future__ import annotations
 
@@ -23,10 +23,10 @@ def _build_path(geometry: GeometryEntity) -> QPainterPath:
 
 
 class GeometryItem(QGraphicsPathItem):
-    """Item QGraphics que dibuja una entidad geometrica.
+    """Item QGraphics que dibuja a entidad geometrica.
 
     En modo preview la pluma es discontinua y clara, no es seleccionable
-    y tiene un z-value menor para que quede por debajo de la geometria real.
+    y tiene un z-value menor for que quede por debajo de la geometry real.
     """
 
     def __init__(self, geometry: GeometryEntity, preview: bool = False, parent=None) -> None:

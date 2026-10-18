@@ -1,4 +1,4 @@
-"""Vector en el plano 2D."""
+"""Vector in the 2D plane."""
 
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ class Vector2D:
     def normalized(self) -> "Vector2D":
         n = self.norm()
         if n == 0:
-            raise ValueError("No se puede normalizar el vector nulo")
+            raise ValueError("The zero vector cannot be normalized")
         return Vector2D(self.x / n, self.y / n)
 
     def dot(self, other: "Vector2D") -> float:

@@ -1,4 +1,4 @@
-"""Interpolacion transfinita (TFI) para un cuadrilatero."""
+"""Transfinite interpolation (TFI) for a quadrilateral."""
 
 from __future__ import annotations
 
@@ -13,15 +13,15 @@ def tfi_grid(
     north: Sequence[Point2D],
     west: Sequence[Point2D],
 ) -> List[List[Point2D]]:
-    """Genera una rejilla estructurada por interpolacion transfinita.
+    """Genera a rejilla estructurada por interpolacion transfinita.
 
-    Convenio de esquinas y sentidos (siempre segun el recorrido del loop):
+    Convenio de corners y sentidos (siempre segun el recorrido del loop):
         south: c0 -> c1 (N_u puntos). Es el lado 0 del bloque.
         east:  c1 -> c2 (N_v puntos). Es el lado 1 del bloque.
         north: c2 -> c3 (N_u puntos). Es el lado 2 del bloque.
         west:  c3 -> c0 (N_v puntos). Es el lado 3 del bloque.
 
-    Devuelve grid[j][i] con j en [0, N_v), i en [0, N_u).
+    Devuelve grid[j][i] with j en [0, N_v), i en [0, N_u).
     grid[0][0] = c0, grid[0][N_u-1] = c1,
     grid[N_v-1][N_u-1] = c2, grid[N_v-1][0] = c3.
     """
@@ -30,18 +30,18 @@ def tfi_grid(
 
     if len(north) != n_u:
         raise ValueError(
-            "Los lados 0 y 2 deben tener el mismo numero de nodos: {} vs {}".format(
+            "Sides 0 and 2 must have the same node count: {} vs {}".format(
                 n_u, len(north)
             )
         )
     if len(west) != n_v:
         raise ValueError(
-            "Los lados 1 y 3 deben tener el mismo numero de nodos: {} vs {}".format(
+            "Sides 1 and 3 must have the same node count: {} vs {}".format(
                 n_v, len(west)
             )
         )
     if n_u < 2 or n_v < 2:
-        raise ValueError("Cada lado necesita al menos 2 nodos")
+        raise ValueError("Each side requires at least two nodes")
 
     # Esquinas
     c0 = south[0]
@@ -49,9 +49,9 @@ def tfi_grid(
     c2 = north[0]
     c3 = north[-1]
 
-    # Reordenamos los lados 2 y 3 para que vayan en el sentido del grid:
-    # north debe ir c3 -> c2 (o sea, recorrer el lado 2 al reves),
-    # west debe ir c0 -> c3 (recorrer el lado 3 al reves).
+    # Reordenamos los lados 2 y 3 for que vayan en el sentido del grid:
+    # north must ir c3 -> c2 (o sea, recorrer el lado 2 in reverse),
+    # west must ir c0 -> c3 (recorrer el lado 3 in reverse).
     north_rev = list(reversed(north))
     west_rev = list(reversed(west))
 
@@ -67,7 +67,7 @@ def tfi_grid(
             w = west_rev[j]   # oeste en (0, v)
             e = east[j]       # este en (1, v)
 
-            # Correccion bilineal en las esquinas
+            # Correccion bilineal en las corners
             bx = (
                 (1.0 - u) * (1.0 - v) * c0.x
                 + u * (1.0 - v) * c1.x

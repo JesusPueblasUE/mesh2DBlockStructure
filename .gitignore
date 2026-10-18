@@ -32,3 +32,8 @@ Thumbs.db
 
 # PyInstaller
 *.spec
+
+snapshot.py
+convert_meshcad_to_english.py
+repair_english_conversion.py
+english_conversion_audit.txt

@@ -1,4 +1,4 @@
-"""Arco de circulo recorrido en sentido antihorario."""
+"""Circular arc traversed counterclockwise."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class Arc(GeometryEntity):
 
     def __post_init__(self):
         if self.radius <= 0:
-            raise ValueError("El radio debe ser positivo")
+            raise ValueError("El radio must be positive")
 
     def angle_span(self) -> float:
         span = self.end_angle - self.start_angle
@@ -50,7 +50,7 @@ class Arc(GeometryEntity):
 
     def sample(self, n: int) -> List[Point2D]:
         if n < 2:
-            raise ValueError("n debe ser >= 2")
+            raise ValueError("n must be >= 2")
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
     def bounding_box(self) -> Tuple[Point2D, Point2D]:

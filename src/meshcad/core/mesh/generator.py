@@ -1,4 +1,4 @@
-"""Generacion de mallas estructuradas por bloque."""
+"""Block-structured mesh generation."""
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ from meshcad.core.topology.topology import Topology
 class BlockMesh:
     """Malla estructurada de un bloque.
 
-    grid[j][i] con j en [0, n_v) e i en [0, n_u).
-    n_u es el numero de nodos de los lados 0 y 2.
-    n_v es el numero de nodos de los lados 1 y 3.
+    grid[j][i] with j en [0, n_v) e i en [0, n_u).
+    n_u es el number de nodes de los lados 0 y 2.
+    n_v es el number de nodes de los lados 1 y 3.
     """
 
     block_id: int
@@ -43,24 +43,24 @@ class BlockMesh:
 
 
 def mesh_block(block: Block, topology: Topology, mesh_model: MeshModel, options: Optional[SmoothingOptions] = None) -> BlockMesh:
-    """Genera la malla de un bloque usando sus 4 lados y el modelo de malla."""
+    """Genera la mesh de un bloque usando sus 4 lados y el modelo de mesh."""
     side_samples = [
         mesh_model.side_samples(side, topology) for side in block.sides
     ]
     s0, s1, s2, s3 = side_samples
 
     if len(s0) < 2 or len(s1) < 2 or len(s2) < 2 or len(s3) < 2:
-        raise ValueError("Cada lado debe tener al menos 2 nodos")
+        raise ValueError("Each side must have at least two nodes")
 
     if len(s0) != len(s2):
         raise ValueError(
-            "Lados 0 y 2 con distinto numero de nodos: {} vs {}".format(
+            "Sides 0 and 2 have different node counts: {} vs {}".format(
                 len(s0), len(s2)
             )
         )
     if len(s1) != len(s3):
         raise ValueError(
-            "Lados 1 y 3 con distinto numero de nodos: {} vs {}".format(
+            "Sides 1 and 3 have different node counts: {} vs {}".format(
                 len(s1), len(s3)
             )
         )

@@ -1,4 +1,4 @@
-"""Vertice topologico: punto con identificador estable."""
+"""Topological vertex: point with a stable identifier."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ class Vertex:
     """Vertice topologico.
 
     El id es asignado por el contenedor Topology. El punto es la
-    representacion geometrica del vertice.
+    representacion geometrica del vertex.
     """
 
     id: int

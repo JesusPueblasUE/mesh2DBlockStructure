@@ -1,4 +1,4 @@
-"""Herramientas interactivas del CAD."""
+"""Interactive CAD tools."""
 
 from meshcad.gui.tools.base import BaseTool
 from meshcad.gui.tools.line_tool import LineTool

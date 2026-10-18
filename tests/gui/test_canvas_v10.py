@@ -7,7 +7,7 @@ def test_y_axis_flip(qtbot):
     doc = Document()
     canvas = CadCanvas(doc)
     qtbot.addWidget(canvas)
-    # El eje Y debe ir hacia arriba (transformada escala -1 en Y)
+    # El eje Y must ir hacia arriba (transformada escala -1 en Y)
     assert canvas.transform().m22() == -1.0
 
 

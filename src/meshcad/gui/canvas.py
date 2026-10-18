@@ -1,4 +1,4 @@
-"""Lienzo CAD interactivo basado en QGraphicsView."""
+"""Interactive CAD canvas based on QGraphicsView."""
 
 from __future__ import annotations
 import math
@@ -52,7 +52,7 @@ class CadCanvas(QGraphicsView):
         self.document.mesh_generated.connect(self._on_mesh_generated)
 
     def _model_bounding_rect(self):
-        """Calcula los limites del modelo completo y de la malla visible."""
+        """Calcula los limites del modelo completo y de la mesh visible."""
         from PyQt5.QtCore import QRectF
         bounds = None
 
@@ -276,7 +276,7 @@ class CadCanvas(QGraphicsView):
                         event.accept()
                         return
 
-            # Deteccion de clic en arista
+            # Deteccion de clic en edge
             items = self.items(event.pos())
             for item in items:
                 if isinstance(item, GeometryItem) and hasattr(item, 'edge_id'):
@@ -333,10 +333,10 @@ class CadCanvas(QGraphicsView):
             scene_pos = self.mapToScene(event.pos())
             point = Point2D(scene_pos.x(), scene_pos.y())
 
-            # Los vertices topologicos tienen prioridad si coinciden con un grip.
+            # Los vertices topologicos tienen prioridad si coinciden with un grip.
             vertex = self.snap_to_vertex(point)
             if vertex is not None:
-                new_point = self._edit_point_dialog("Editar vertice", vertex.point)
+                new_point = self._edit_point_dialog("Edit Vertex", vertex.point)
                 if new_point is not None:
                     self.document.topology.move_vertex(vertex.id, new_point)
                     self.document.notify_change()
@@ -346,7 +346,7 @@ class CadCanvas(QGraphicsView):
             grip_hit = self._grip_near(point)
             if grip_hit is not None:
                 edge_id, grip_index, grip = grip_hit
-                new_point = self._edit_point_dialog("Editar punto de control", grip)
+                new_point = self._edit_point_dialog("Edit Control Point", grip)
                 if new_point is not None:
                     self.document.topology.move_edge_grip(edge_id, grip_index, new_point)
                     self.document.notify_change()

@@ -64,7 +64,7 @@ def test_grid_boundaries_match_sides():
 
 
 def test_rectangle_interior_is_cartesian():
-    # En un rectangulo con distribucion uniforme, la malla debe ser cartesiana.
+    # En un rectangle with distribucion uniform, la mesh must ser cartesiana.
     s, e, n, w = make_rect_sides(4, 5)
     grid = tfi_grid(s, e, n, w)
     for j in range(len(grid)):
@@ -78,7 +78,7 @@ def test_rectangle_interior_is_cartesian():
 def test_requires_matching_counts():
     s = [Point2D(0, 0), Point2D(1, 0), Point2D(2, 0)]
     e = [Point2D(2, 0), Point2D(2, 1)]
-    n_wrong = [Point2D(2, 1), Point2D(0, 1)]  # solo 2 puntos en vez de 3
+    n_wrong = [Point2D(2, 1), Point2D(0, 1)]  # only 2 puntos en vez de 3
     w = [Point2D(0, 1), Point2D(0, 0)]
     with pytest.raises(ValueError):
         tfi_grid(s, e, n_wrong, w)

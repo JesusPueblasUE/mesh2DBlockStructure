@@ -1,4 +1,4 @@
-"""Documento: estado del proyecto (topologia, malla y bloques)."""
+"""Document: project state (topology, mesh, and blocks)."""
 
 from __future__ import annotations
 from typing import Any, Dict, List, Tuple
@@ -109,7 +109,7 @@ class Document(QObject):
     def set_edge_spec(self, spec: EdgeMeshSpec) -> None:
         visited = set()
         self._propagate_nodes(spec.edge_id, spec.n_nodes, visited)
-        # Asegurarnos de que la arista original mantiene su distribucion
+        # Asegurarnos de que la edge original mantiene su distribucion
         self.mesh.set_spec(spec)
         self.mesh_changed.emit()
         self.recompute_blocks()
@@ -155,7 +155,7 @@ class Document(QObject):
     def from_dict(cls, data: Dict[str, Any]) -> "Document":
         from meshcad.io.json_io import block_from_dict, edge_spec_from_dict, topology_from_dict
         if data.get("format") != FORMAT:
-            raise ValueError("Formato desconocido")
+            raise ValueError("Unknown format")
         doc = cls()
         doc.topology = topology_from_dict(data["topology"])
         for sd in data.get("edge_specs", []):

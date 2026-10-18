@@ -1,8 +1,8 @@
-"""Exportacion de la malla a VTK XML (pvd + vts por bloque).
+"""Mesh export to VTK XML (PVD plus one VTS file per block).
 
-El formato pvd (ParaView Data) es una coleccion que referencia
+El formato pvd (ParaView Data) es a coleccion que referencia
 ficheros .vts (VTK XML StructuredGrid), uno por bloque. ParaView
-abre el .pvd y muestra todos los bloques a la vez.
+abre el .pvd y muestra all los blocks a la vez.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from meshcad.core.mesh.generator import BlockMesh
 
 
 def export_mesh_vtk(block_meshes: List[BlockMesh], pvd_path) -> None:
-    """Escribe un .pvd y una carpeta de .vts con las mallas de los bloques."""
+    """Write a PVD file and a VTS folder containing the block meshes."""
     pvd_path = Path(pvd_path)
     pvd_path.parent.mkdir(parents=True, exist_ok=True)
 

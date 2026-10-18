@@ -1,4 +1,4 @@
-"""Panel con la lista de bloques y el estado de sus lados opuestos."""
+"""Panel listing blocks and the status of their opposite sides."""
 
 from __future__ import annotations
 from PyQt5.QtWidgets import QDockWidget, QLabel, QListWidget, QListWidgetItem, QVBoxLayout, QWidget, QPushButton, QAbstractItemView
@@ -7,7 +7,7 @@ from meshcad.gui.document import Document
 
 class BlocksPanel(QDockWidget):
     def __init__(self, document: Document, parent=None) -> None:
-        super().__init__("Bloques", parent)
+        super().__init__("Blocks", parent)
         self.document = document
 
         container = QWidget()
@@ -17,7 +17,7 @@ class BlocksPanel(QDockWidget):
         self.list_widget.setSelectionMode(QAbstractItemView.SingleSelection)
         layout.addWidget(self.list_widget)
 
-        self.delete_button = QPushButton("Eliminar bloque seleccionado")
+        self.delete_button = QPushButton("Delete Selected Block")
         self.delete_button.clicked.connect(self._on_delete)
         layout.addWidget(self.delete_button)
 
@@ -40,9 +40,9 @@ class BlocksPanel(QDockWidget):
             if ok_02 and ok_13:
                 tag = "OK"
                 n_ok += 1
-                detail = "(nodos {} x {})".format(n0, n1)
+                detail = "(nodes {} x {})".format(n0, n1)
             else:
-                tag = "DESAJUSTE"
+                tag = "MISMATCH"
                 n_bad += 1
                 msgs = []
                 if not ok_02: msgs.append("lados 0/2: {} vs {}".format(n0, n2))
@@ -53,14 +53,14 @@ class BlocksPanel(QDockWidget):
             self.list_widget.addItem(item)
 
         if not self.document.blocks:
-            self.status.setText("Sin bloques todavia.")
+            self.status.setText("No blocks yet.")
         else:
-            self.status.setText("{} bloques: {} OK, {} con desajustes".format(len(self.document.blocks), n_ok, n_bad))
+            self.status.setText("{} blocks: {} OK, {} with mismatches".format(len(self.document.blocks), n_ok, n_bad))
 
     def _on_delete(self) -> None:
         row = self.list_widget.currentRow()
         if row < 0 or row >= len(self.document.blocks):
-            self.status.setText("Selecciona un bloque para borrar.")
+            self.status.setText("Select a block to delete.")
             return
         block = self.document.blocks[row]
         self.document.remove_block(block.id)

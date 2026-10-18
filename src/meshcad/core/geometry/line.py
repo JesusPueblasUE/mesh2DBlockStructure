@@ -1,4 +1,4 @@
-"""Segmento de recta."""
+"""Line segment."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class Line(GeometryEntity):
 
     def sample(self, n: int) -> List[Point2D]:
         if n < 2:
-            raise ValueError("n debe ser >= 2")
+            raise ValueError("n must be >= 2")
         return [self.evaluate(i / (n - 1)) for i in range(n)]
 
     def bounding_box(self) -> Tuple[Point2D, Point2D]:

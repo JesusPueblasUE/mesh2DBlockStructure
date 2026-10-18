@@ -17,6 +17,6 @@ def test_move_arc_endpoint_reconnects():
     new_arc = t.get_edge(e.id).geometry
     
     assert isinstance(new_arc, Arc)
-    # El arco debe pasar por ambos vertices
+    # El arco must pasar por ambos vertices
     assert math.isclose(new_arc.start_point().distance_to(Point2D(2, 0)), 0.0, abs_tol=1e-7)
     assert math.isclose(new_arc.end_point().distance_to(Point2D(0, 1)), 0.0, abs_tol=1e-7)

@@ -10,7 +10,7 @@ def test_main_window_starts_with_empty_document(qtbot):
     qtbot.addWidget(w)
     assert len(w.document.topology.vertices()) == 0
     assert w.current_path is None
-    assert "sin titulo" in w.windowTitle()
+    assert "untitled" in w.windowTitle()
 
 
 def test_main_window_new_clears(qtbot):

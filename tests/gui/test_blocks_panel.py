@@ -12,7 +12,7 @@ def test_blocks_panel_refresh_without_blocks(qtbot):
     doc = Document()
     panel = BlocksPanel(doc)
     qtbot.addWidget(panel)
-    assert "Sin bloques" in panel.status.text()
+    assert "No blocks" in panel.status.text()
 
 
 def test_blocks_panel_lists_ok_block(qtbot):
@@ -29,7 +29,7 @@ def test_blocks_panel_lists_ok_block(qtbot):
 
     panel = BlocksPanel(doc)
     qtbot.addWidget(panel)
-    assert "1 bloques: 1 OK" in panel.status.text()
+    assert "1 blocks: 1 OK" in panel.status.text()
 
 
 def test_blocks_panel_detects_mismatch(qtbot):
@@ -48,4 +48,4 @@ def test_blocks_panel_detects_mismatch(qtbot):
     panel = BlocksPanel(doc)
     qtbot.addWidget(panel)
     assert "0 OK" in panel.status.text()
-    assert "1 con desajustes" in panel.status.text()
+    assert "1 with mismatches" in panel.status.text()

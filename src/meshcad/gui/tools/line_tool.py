@@ -1,4 +1,4 @@
-"""Herramienta interactiva para dibujar segmentos de recta."""
+"""Interactive tool for drawing line segments."""
 
 from __future__ import annotations
 

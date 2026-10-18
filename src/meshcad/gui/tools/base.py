@@ -1,4 +1,4 @@
-"""Clase base de las herramientas interactivas."""
+"""Base class for interactive tools."""
 
 from __future__ import annotations
 
@@ -8,11 +8,11 @@ from meshcad.core.geometry.point import Point2D
 
 
 class BaseTool:
-    """Interfaz comun a todas las herramientas interactivas.
+    """Interfaz comun a all las herramientas interactivas.
 
     Cada herramienta acumula puntos en self.points. Cuando tiene
     suficientes, llama a canvas.add_geometry. Mientras tanto muestra
-    una vista previa llamando a canvas.show_preview.
+    a vista previa llamando a canvas.show_preview.
     """
 
     def __init__(self, canvas) -> None:
@@ -29,7 +29,7 @@ class BaseTool:
         self.points = []
         self.canvas.clear_preview()
 
-    # ----------------------- utilidades para subclases ------------------ #
+    # ----------------------- utilidades for subclases ------------------ #
 
     def _scene_point(self, event) -> Point2D:
         pos = self.canvas.mapToScene(event.pos())

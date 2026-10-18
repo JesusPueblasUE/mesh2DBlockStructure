@@ -1,4 +1,4 @@
-"""Contenedor de vertices y aristas con identificadores unicos."""
+"""Container of vertices and edges with unique identifiers."""
 
 from __future__ import annotations
 
@@ -47,13 +47,13 @@ class Topology:
     def add_edge(self, start_vertex: Vertex, end_vertex: Vertex,
                  geometry: GeometryEntity) -> Edge:
         if not self.has_vertex(start_vertex.id):
-            raise ValueError("start_vertex no pertenece a esta topologia")
+            raise ValueError("start_vertex does not belong to this topology")
         if not self.has_vertex(end_vertex.id):
-            raise ValueError("end_vertex no pertenece a esta topologia")
+            raise ValueError("end_vertex does not belong to this topology")
         if geometry.start_point().distance_to(start_vertex.point) > TOL:
-            raise ValueError("El punto inicial de la geometria no coincide con start_vertex")
+            raise ValueError("The geometry start point does not match start_vertex")
         if geometry.end_point().distance_to(end_vertex.point) > TOL:
-            raise ValueError("El punto final de la geometria no coincide con end_vertex")
+            raise ValueError("The geometry end point does not match end_vertex")
             
         e = Edge(next(self._edge_ids), start_vertex.id, end_vertex.id, geometry)
         self._edges[e.id] = e
@@ -74,7 +74,7 @@ class Topology:
             
         edge = self._edges.pop(edge_id)
         
-        # Comprobar si los vertices han quedado huerfanos (sin otras aristas)
+        # Comprobar si los vertices han quedado orphaned (without otras edges)
         used_vertices = set()
         for e in self._edges.values():
             used_vertices.add(e.start_vertex_id)

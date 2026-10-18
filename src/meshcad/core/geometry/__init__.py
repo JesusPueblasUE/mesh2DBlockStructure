@@ -1,4 +1,4 @@
-"""Entidades geometricas 2D: Point2D, Line, Arc, Spline."""
+"""2D geometric entities: Point2D, Line, Arc, and Spline."""
 
 from meshcad.core.geometry.point import Point2D
 from meshcad.core.geometry.vector import Vector2D
