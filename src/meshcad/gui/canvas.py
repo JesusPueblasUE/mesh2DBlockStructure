@@ -19,6 +19,7 @@ SNAP_TOLERANCE = 8.0
 
 class CadCanvas(QGraphicsView):
     mouse_moved = pyqtSignal(float, float)
+    edge_clicked = pyqtSignal(int)
     
     def __init__(self, document: Document, parent=None) -> None:
         super().__init__(parent)
@@ -49,6 +50,10 @@ class CadCanvas(QGraphicsView):
 
         self.document.topology_changed.connect(self._redraw_all)
         self.document.mesh_generated.connect(self._on_mesh_generated)
+
+    def reset_zoom(self) -> None:
+        self.resetTransform()
+        self.scale(1, -1)
 
     def set_tool(self, tool) -> None:
         if self.tool is not None:
@@ -232,6 +237,17 @@ class CadCanvas(QGraphicsView):
                         event.accept()
                         return
 
+            # Deteccion de clic en arista
+            items = self.items(event.pos())
+            for item in items:
+                if isinstance(item, GeometryItem) and hasattr(item, 'edge_id'):
+                    self.edge_clicked.emit(item.edge_id)
+                    event.accept()
+                    return
+
+            self.clear_highlight()
+            self.edge_clicked.emit(-1)
+
         super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event) -> None:
@@ -350,6 +366,7 @@ class CadCanvas(QGraphicsView):
 
         for edge in self.document.topology.edges():
             item = GeometryItem(edge.geometry)
+            item.edge_id = edge.id
             self.scene().addItem(item)
             self._geometry_items.append(item)
 
