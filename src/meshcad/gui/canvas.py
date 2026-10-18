@@ -289,38 +289,70 @@ class CadCanvas(QGraphicsView):
 
         super().mousePressEvent(event)
 
+    def _grip_near(self, point: Point2D):
+        """Devuelve (edge_id, grip_index, grip) si hay un grip bajo el cursor."""
+        scale = abs(self.transform().m11())
+        tolerance = SNAP_TOLERANCE / scale if scale > 0 else SNAP_TOLERANCE
+        best = None
+        best_distance = None
+        for edge in self.document.topology.edges():
+            for grip_index, grip in enumerate(edge.geometry.get_grips()):
+                distance = grip.distance_to(point)
+                if distance <= tolerance and (best_distance is None or distance < best_distance):
+                    best = (edge.id, grip_index, grip)
+                    best_distance = distance
+        return best
+
+    def _edit_point_dialog(self, title: str, point: Point2D):
+        """Solicita coordenadas X/Y y devuelve Point2D o None al cancelar."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout(dialog)
+        form = QFormLayout()
+        spin_x = QDoubleSpinBox()
+        spin_x.setRange(-999999, 999999)
+        spin_x.setDecimals(6)
+        spin_x.setValue(point.x)
+        spin_y = QDoubleSpinBox()
+        spin_y.setRange(-999999, 999999)
+        spin_y.setDecimals(6)
+        spin_y.setValue(point.y)
+        form.addRow("X:", spin_x)
+        form.addRow("Y:", spin_y)
+        layout.addLayout(form)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec_() != QDialog.Accepted:
+            return None
+        return Point2D(spin_x.value(), spin_y.value())
+
     def mouseDoubleClickEvent(self, event) -> None:
         if event.button() == Qt.LeftButton and self.tool is None:
-            pos = self.mapToScene(event.pos())
-            p = Point2D(pos.x(), pos.y())
-            v = self.snap_to_vertex(p)
-            if v is not None:
-                dialog = QDialog(self)
-                dialog.setWindowTitle("Editar coordenadas")
-                layout = QVBoxLayout(dialog)
-                form = QFormLayout()
-                spin_x = QDoubleSpinBox()
-                spin_x.setRange(-999999, 999999)
-                spin_x.setDecimals(4)
-                spin_x.setValue(v.point.x)
-                spin_y = QDoubleSpinBox()
-                spin_y.setRange(-999999, 999999)
-                spin_y.setDecimals(4)
-                spin_y.setValue(v.point.y)
-                form.addRow("X:", spin_x)
-                form.addRow("Y:", spin_y)
-                layout.addLayout(form)
-                buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, dialog)
-                buttons.accepted.connect(dialog.accept)
-                buttons.rejected.connect(dialog.reject)
-                layout.addWidget(buttons)
-                
-                if dialog.exec_() == QDialog.Accepted:
-                    new_p = Point2D(spin_x.value(), spin_y.value())
-                    self.document.topology.move_vertex(v.id, new_p)
+            scene_pos = self.mapToScene(event.pos())
+            point = Point2D(scene_pos.x(), scene_pos.y())
+
+            # Los vertices topologicos tienen prioridad si coinciden con un grip.
+            vertex = self.snap_to_vertex(point)
+            if vertex is not None:
+                new_point = self._edit_point_dialog("Editar vertice", vertex.point)
+                if new_point is not None:
+                    self.document.topology.move_vertex(vertex.id, new_point)
                     self.document.notify_change()
                 event.accept()
                 return
+
+            grip_hit = self._grip_near(point)
+            if grip_hit is not None:
+                edge_id, grip_index, grip = grip_hit
+                new_point = self._edit_point_dialog("Editar punto de control", grip)
+                if new_point is not None:
+                    self.document.topology.move_edge_grip(edge_id, grip_index, new_point)
+                    self.document.notify_change()
+                event.accept()
+                return
+
         super().mouseDoubleClickEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
