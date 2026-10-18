@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from meshcad.core.geometry.point import Point2D
 from meshcad.core.mesh.model import MeshModel
 from meshcad.core.mesh.tfi import tfi_grid
+from meshcad.core.mesh.smoothing import SmoothingOptions, improve_grid
 from meshcad.core.topology.block import Block
 from meshcad.core.topology.topology import Topology
 
@@ -41,7 +42,7 @@ class BlockMesh:
         return self.grid[j][i]
 
 
-def mesh_block(block: Block, topology: Topology, mesh_model: MeshModel) -> BlockMesh:
+def mesh_block(block: Block, topology: Topology, mesh_model: MeshModel, options: Optional[SmoothingOptions] = None) -> BlockMesh:
     """Genera la malla de un bloque usando sus 4 lados y el modelo de malla."""
     side_samples = [
         mesh_model.side_samples(side, topology) for side in block.sides
@@ -65,4 +66,6 @@ def mesh_block(block: Block, topology: Topology, mesh_model: MeshModel) -> Block
         )
 
     grid = tfi_grid(s0, s1, s2, s3)
+    if options is not None:
+        grid = improve_grid(grid, options)
     return BlockMesh(block_id=block.id, grid=grid)

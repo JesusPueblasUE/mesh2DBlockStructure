@@ -7,6 +7,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QUndoStack
 
 from meshcad.core.mesh.generator import BlockMesh, mesh_block
+from meshcad.core.mesh.smoothing import SmoothingOptions
 from meshcad.core.mesh.model import EdgeMeshSpec, MeshModel, UniformDistribution
 from meshcad.core.topology.block import Block
 from meshcad.core.topology.topology import Topology
@@ -30,6 +31,7 @@ class Document(QObject):
         self.block_meshes: List[BlockMesh] = []
         self._next_block_id = 0
         self.undo_stack = QUndoStack()
+        self.mesh_improvement = SmoothingOptions()
 
     def notify_change(self) -> None:
         self.topology_changed.emit()
@@ -129,7 +131,7 @@ class Document(QObject):
         errors: List[str] = []
         for block in self.blocks:
             try:
-                bm = mesh_block(block, self.topology, self.mesh)
+                bm = mesh_block(block, self.topology, self.mesh, self.mesh_improvement)
             except ValueError as e:
                 errors.append("Bloque {}: {}".format(block.id, e))
                 continue
@@ -146,6 +148,7 @@ class Document(QObject):
             "edge_specs": [edge_spec_to_dict(s) for s in self.mesh.edge_specs.values()],
             "blocks": [block_to_dict(b) for b in self.blocks],
             "next_block_id": self._next_block_id,
+            "mesh_improvement": self.mesh_improvement.__dict__,
         }
 
     @classmethod
@@ -159,6 +162,7 @@ class Document(QObject):
             doc.mesh.set_spec(edge_spec_from_dict(sd))
         doc.blocks = [block_from_dict(bd) for bd in data.get("blocks", [])]
         doc._next_block_id = int(data.get("next_block_id", len(doc.blocks)))
+        doc.mesh_improvement = SmoothingOptions(**data.get("mesh_improvement", {}))
         doc.recompute_blocks()
         return doc
 
@@ -167,6 +171,7 @@ class Document(QObject):
         self.mesh = other.mesh
         self.blocks = other.blocks
         self._next_block_id = other._next_block_id
+        self.mesh_improvement = other.mesh_improvement
         self.block_meshes = []
         self.topology_changed.emit()
         self.mesh_changed.emit()

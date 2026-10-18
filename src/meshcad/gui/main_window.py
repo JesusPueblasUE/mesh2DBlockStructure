@@ -3,14 +3,15 @@
 import sys
 from pathlib import Path
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import (
     QAction, QApplication, QDoubleSpinBox, QFileDialog, QLabel,
     QMainWindow, QMessageBox, QStatusBar, QToolBar, QDialog, 
-    QVBoxLayout, QFormLayout, QDialogButtonBox
+    QVBoxLayout, QFormLayout, QDialogButtonBox, QCheckBox, QSpinBox
 )
 
 from meshcad.core.geometry.point import Point2D
+from meshcad.core.mesh.smoothing import SmoothingOptions
 from meshcad.gui.blocks_panel import BlocksPanel
 from meshcad.gui.canvas import CadCanvas
 from meshcad.gui.document import Document
@@ -59,8 +60,14 @@ class MainWindow(QMainWindow):
         
         self.canvas.mouse_moved.connect(self._on_mouse_moved)
 
+        self._mesh_update_timer = QTimer(self)
+        self._mesh_update_timer.setSingleShot(True)
+        self._mesh_update_timer.setInterval(120)
+        self._mesh_update_timer.timeout.connect(self._apply_live_mesh_options)
+        self._updating_mesh_controls = False
         self._create_menus()
         self._create_toolbar()
+        self._sync_mesh_controls_from_document()
 
     def _on_edge_clicked(self, edge_id: int) -> None:
         if edge_id == -1:
@@ -144,6 +151,44 @@ class MainWindow(QMainWindow):
         self.action_reset_zoom.triggered.connect(self.canvas.reset_zoom)
         toolbar.addAction(self.action_reset_zoom)
 
+
+        # --- live mesh controls ---
+        toolbar.addSeparator()
+        self.orthogonal_check = QCheckBox("Ortogonal")
+        self.orthogonal_check.setToolTip("Impone perpendicularidad cerca del contorno")
+        toolbar.addWidget(self.orthogonal_check)
+        toolbar.addWidget(QLabel(" Capas: "))
+        self.orthogonal_layers_spin = QSpinBox()
+        self.orthogonal_layers_spin.setRange(1, 20)
+        self.orthogonal_layers_spin.setMaximumWidth(58)
+        toolbar.addWidget(self.orthogonal_layers_spin)
+        toolbar.addWidget(QLabel(" Intensidad: "))
+        self.orthogonal_strength_spin = QDoubleSpinBox()
+        self.orthogonal_strength_spin.setRange(0.0, 1.0)
+        self.orthogonal_strength_spin.setSingleStep(0.05)
+        self.orthogonal_strength_spin.setDecimals(2)
+        self.orthogonal_strength_spin.setMaximumWidth(72)
+        toolbar.addWidget(self.orthogonal_strength_spin)
+        toolbar.addWidget(QLabel(" Suavizado: "))
+        self.smoothing_iterations_spin = QSpinBox()
+        self.smoothing_iterations_spin.setRange(0, 2000)
+        self.smoothing_iterations_spin.setSingleStep(5)
+        self.smoothing_iterations_spin.setMaximumWidth(72)
+        toolbar.addWidget(self.smoothing_iterations_spin)
+        toolbar.addWidget(QLabel(" Relajacion: "))
+        self.smoothing_relaxation_spin = QDoubleSpinBox()
+        self.smoothing_relaxation_spin.setRange(0.05, 1.0)
+        self.smoothing_relaxation_spin.setSingleStep(0.05)
+        self.smoothing_relaxation_spin.setDecimals(2)
+        self.smoothing_relaxation_spin.setMaximumWidth(72)
+        toolbar.addWidget(self.smoothing_relaxation_spin)
+        self.orthogonal_check.toggled.connect(self._schedule_live_mesh_update)
+        for control in (self.orthogonal_layers_spin,
+                        self.orthogonal_strength_spin,
+                        self.smoothing_iterations_spin,
+                        self.smoothing_relaxation_spin):
+            control.valueChanged.connect(self._schedule_live_mesh_update)
+        toolbar.addSeparator()
     def _on_insert_point(self) -> None:
         dialog = QDialog(self)
         dialog.setWindowTitle("Insertar punto")
@@ -241,6 +286,39 @@ class MainWindow(QMainWindow):
 
     def _on_project_replaced(self) -> None:
         self.edges_panel.refresh()
+        self._sync_mesh_controls_from_document()
+
+    def _schedule_live_mesh_update(self, *args) -> None:
+        """Agrupa cambios rapidos para regenerar la malla una sola vez."""
+        if not self._updating_mesh_controls:
+            self._mesh_update_timer.start()
+
+    def _apply_live_mesh_options(self) -> None:
+        """Actualiza opciones y regenera la malla sin boton Apply."""
+        self.document.mesh_improvement = SmoothingOptions(
+            orthogonal=self.orthogonal_check.isChecked(),
+            orthogonal_layers=self.orthogonal_layers_spin.value(),
+            smoothing_iterations=self.smoothing_iterations_spin.value(),
+            relaxation=self.smoothing_relaxation_spin.value(),
+            orthogonal_strength=self.orthogonal_strength_spin.value(),
+        )
+        if self.document.blocks:
+            self._on_generate_mesh()
+        else:
+            self.status_label.setText("Parametros actualizados; aun no hay bloques.")
+
+    def _sync_mesh_controls_from_document(self) -> None:
+        """Carga en la barra los parametros del proyecto actual."""
+        self._updating_mesh_controls = True
+        try:
+            options = self.document.mesh_improvement
+            self.orthogonal_check.setChecked(options.orthogonal)
+            self.orthogonal_layers_spin.setValue(options.orthogonal_layers)
+            self.orthogonal_strength_spin.setValue(options.orthogonal_strength)
+            self.smoothing_iterations_spin.setValue(options.smoothing_iterations)
+            self.smoothing_relaxation_spin.setValue(options.relaxation)
+        finally:
+            self._updating_mesh_controls = False
 
     def _on_generate_mesh(self) -> None:
         meshes, errors = self.document.generate_mesh()
