@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import (
@@ -232,6 +234,31 @@ class CadCanvas(QGraphicsView):
         super().keyPressEvent(event)
 
     # --------------------------- dibujo interno -------------------------- #
+
+    def drawBackground(self, painter: QPainter, rect) -> None:
+        super().drawBackground(painter, rect)
+        if not self.show_grid:
+            return
+
+        grid_size = 10.0
+        left = math.floor(rect.left() / grid_size) * grid_size
+        top = math.floor(rect.top() / grid_size) * grid_size
+
+        pen = QPen(QColor(230, 230, 235))
+        pen.setWidthF(0.5)
+        painter.setPen(pen)
+
+        # Verticales
+        x = left
+        while x < rect.right():
+            painter.drawLine(int(x), int(rect.top()), int(x), int(rect.bottom()))
+            x += grid_size
+
+        # Horizontales
+        y = top
+        while y < rect.bottom():
+            painter.drawLine(int(rect.left()), int(y), int(rect.right()), int(y))
+            y += grid_size
 
     def _redraw_all(self) -> None:
         for item in self._geometry_items:

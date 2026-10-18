@@ -134,6 +134,18 @@ class MainWindow(QMainWindow):
         self.action_clear_mesh.triggered.connect(self.canvas.clear_mesh)
         toolbar.addAction(self.action_clear_mesh)
 
+        toolbar.addSeparator()
+
+        self.action_grid = QAction("Ver rejilla", self)
+        self.action_grid.setCheckable(True)
+        self.action_grid.setChecked(True)
+        self.action_grid.triggered.connect(self._on_toggle_grid)
+        toolbar.addAction(self.action_grid)
+
+    def _on_toggle_grid(self, checked: bool) -> None:
+        self.canvas.show_grid = checked
+        self.canvas.viewport().update()
+
     def _on_mouse_moved(self, x: float, y: float) -> None:
         self.coords_label.setText("X: {:.2f}, Y: {:.2f}".format(x, y))
 
