@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import (
@@ -24,8 +23,7 @@ SNAP_TOLERANCE = 8.0
 
 class CadCanvas(QGraphicsView):
     mouse_moved = pyqtSignal(float, float)
-    show_grid = True
-
+    
     def __init__(self, document: Document, parent=None) -> None:
         super().__init__(parent)
         self.document = document
@@ -33,12 +31,22 @@ class CadCanvas(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing, True)
         self.setMouseTracking(True)
         self.setBackgroundBrush(QBrush(QColor(250, 250, 252)))
+        
+        # Invertir eje Y para que crezca hacia arriba
+        self.scale(1, -1)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
         self.tool = None
         self._drag_target = None
+        self._is_panning = False
+        self._last_mouse_pos = None
+        
         self._preview_item = None
         self._highlight_item = None
         self._mesh_item = None
+        
+        self.show_grid = True
+        self.grid_spacing = 10.0
         
         self._vertex_items = {}
         self._grip_items = []
@@ -167,9 +175,25 @@ class CadCanvas(QGraphicsView):
     def _on_mesh_generated(self) -> None:
         self.show_mesh(self.document.block_meshes)
 
-    # ------------------------------- eventos ----------------------------- #
+    # ---------------------------- eventos ------------------------------- #
+
+    def wheelEvent(self, event) -> None:
+        zoom_in_factor = 1.15
+        zoom_out_factor = 1 / zoom_in_factor
+        if event.angleDelta().y() > 0:
+            zoom_factor = zoom_in_factor
+        else:
+            zoom_factor = zoom_out_factor
+        self.scale(zoom_factor, zoom_factor)
 
     def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MiddleButton:
+            self._is_panning = True
+            self._last_mouse_pos = event.pos()
+            self.setCursor(Qt.ClosedHandCursor)
+            event.accept()
+            return
+            
         if self.tool is not None:
             self.tool.mouse_press(event)
             event.accept()
@@ -179,14 +203,12 @@ class CadCanvas(QGraphicsView):
             pos = self.mapToScene(event.pos())
             p = Point2D(pos.x(), pos.y())
 
-            # Comprobar vertices
             v = self.snap_to_vertex(p)
             if v is not None:
                 self._drag_target = ('vertex', v.id)
                 event.accept()
                 return
 
-            # Comprobar grips (arcos y splines)
             scale = self.transform().m11()
             tol = SNAP_TOLERANCE / scale if scale > 0 else SNAP_TOLERANCE
             for edge in self.document.topology.edges():
@@ -199,6 +221,14 @@ class CadCanvas(QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        if self._is_panning:
+            delta = event.pos() - self._last_mouse_pos
+            self._last_mouse_pos = event.pos()
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
+            event.accept()
+            return
+
         pos = self.mapToScene(event.pos())
         self.mouse_moved.emit(pos.x(), pos.y())
 
@@ -219,6 +249,12 @@ class CadCanvas(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
+        if event.button() == Qt.MiddleButton:
+            self._is_panning = False
+            self.setCursor(Qt.ArrowCursor)
+            event.accept()
+            return
+            
         if self._drag_target:
             self._drag_target = None
             event.accept()
@@ -237,27 +273,27 @@ class CadCanvas(QGraphicsView):
 
     def drawBackground(self, painter: QPainter, rect) -> None:
         super().drawBackground(painter, rect)
-        if not self.show_grid:
+        if not self.show_grid or self.grid_spacing <= 0:
             return
 
-        grid_size = 10.0
-        left = math.floor(rect.left() / grid_size) * grid_size
-        top = math.floor(rect.top() / grid_size) * grid_size
+        grid_size = self.grid_spacing
+        min_x = math.floor(rect.left() / grid_size) * grid_size
+        max_x = math.ceil(rect.right() / grid_size) * grid_size
+        min_y = math.floor(min(rect.top(), rect.bottom()) / grid_size) * grid_size
+        max_y = math.ceil(max(rect.top(), rect.bottom()) / grid_size) * grid_size
 
         pen = QPen(QColor(230, 230, 235))
         pen.setWidthF(0.5)
         painter.setPen(pen)
 
-        # Verticales
-        x = left
-        while x < rect.right():
-            painter.drawLine(int(x), int(rect.top()), int(x), int(rect.bottom()))
+        x = min_x
+        while x <= max_x:
+            painter.drawLine(int(x), int(min_y), int(x), int(max_y))
             x += grid_size
 
-        # Horizontales
-        y = top
-        while y < rect.bottom():
-            painter.drawLine(int(rect.left()), int(y), int(rect.right()), int(y))
+        y = min_y
+        while y <= max_y:
+            painter.drawLine(int(min_x), int(y), int(max_x), int(y))
             y += grid_size
 
     def _redraw_all(self) -> None:
