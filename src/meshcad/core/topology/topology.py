@@ -56,13 +56,10 @@ class Topology:
         if not self.has_vertex(end_vertex.id):
             raise ValueError("end_vertex no pertenece a esta topologia")
         if geometry.start_point().distance_to(start_vertex.point) > TOL:
-            raise ValueError(
-                "El punto inicial de la geometria no coincide con start_vertex"
-            )
+            raise ValueError("El punto inicial de la geometria no coincide con start_vertex")
         if geometry.end_point().distance_to(end_vertex.point) > TOL:
-            raise ValueError(
-                "El punto final de la geometria no coincide con end_vertex"
-            )
+            raise ValueError("El punto final de la geometria no coincide con end_vertex")
+            
         e = Edge(next(self._edge_ids), start_vertex.id, end_vertex.id, geometry)
         self._edges[e.id] = e
         return e
@@ -93,15 +90,29 @@ class Topology:
                 if isinstance(g, Line):
                     new_g = Line(v_start, v_end)
                 elif isinstance(g, Arc):
-                    a0 = math.atan2(v_start.y - g.center.y, v_start.x - g.center.x)
-                    a1 = math.atan2(v_end.y - g.center.y, v_end.x - g.center.x)
-                    if edge.start_vertex_id == vertex_id:
-                        r = g.center.distance_to(v_start)
-                    elif edge.end_vertex_id == vertex_id:
-                        r = g.center.distance_to(v_end)
+                    # Recalcular el centro para que el arco pase por ambos extremos.
+                    d = v_start.distance_to(v_end)
+                    R = g.radius
+                    if d > 2 * R:
+                        R = d / 2.0
+                    h = math.sqrt(max(0.0, R**2 - (d/2)**2))
+                    mid = Point2D((v_start.x + v_end.x)/2, (v_start.y + v_end.y)/2)
+                    dx, dy = v_end.x - v_start.x, v_end.y - v_start.y
+                    nx, ny = -dy, dx
+                    norm = math.hypot(nx, ny)
+                    if norm > 1e-9:
+                        nx, ny = nx/norm, ny/norm
                     else:
-                        r = g.radius
-                    new_g = Arc(g.center, max(r, 1e-6), a0, a1)
+                        nx, ny = 0.0, 1.0
+                    
+                    c1 = Point2D(mid.x + h*nx, mid.y + h*ny)
+                    c2 = Point2D(mid.x - h*nx, mid.y - h*ny)
+                    # Elegir el centro mas cercano al original para mantener la curvatura
+                    new_center = c1 if g.center.distance_to(c1) < g.center.distance_to(c2) else c2
+                    
+                    a0 = math.atan2(v_start.y - new_center.y, v_start.x - new_center.x)
+                    a1 = math.atan2(v_end.y - new_center.y, v_end.x - new_center.x)
+                    new_g = Arc(new_center, R, a0, a1)
                 elif isinstance(g, Spline):
                     pts = list(g.points)
                     if edge.start_vertex_id == vertex_id:
@@ -122,7 +133,6 @@ class Topology:
         g = edge.geometry
 
         if isinstance(g, Arc) and grip_index == 0:
-            # Trasladar el centro tambien traslada los extremos (mantiene radio)
             delta = Vector2D(new_point.x - g.center.x, new_point.y - g.center.y)
             v_start = self._vertices[edge.start_vertex_id].point + delta
             v_end = self._vertices[edge.end_vertex_id].point + delta
@@ -150,6 +160,4 @@ class Topology:
         return len(self._vertices) + len(self._edges)
 
     def __repr__(self) -> str:
-        return "Topology(vertices={}, edges={})".format(
-            len(self._vertices), len(self._edges)
-        )
+        return "Topology(vertices={}, edges={})".format(len(self._vertices), len(self._edges))
