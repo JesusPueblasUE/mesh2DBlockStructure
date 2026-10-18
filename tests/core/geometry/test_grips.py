@@ -19,7 +19,7 @@ def test_move_line_vertex():
     assert new_e.geometry.start == Point2D(0, 0)
 
 
-def test_move_arc_endpoint_updates_radius():
+def test_move_arc_endpoint_reconnects():
     t = Topology()
     v0 = t.add_vertex(Point2D(1, 0))
     v1 = t.add_vertex(Point2D(0, 1))
@@ -30,8 +30,9 @@ def test_move_arc_endpoint_updates_radius():
     t.move_vertex(v0.id, Point2D(2, 0))
     new_arc = t.get_edge(e.id).geometry
     assert isinstance(new_arc, Arc)
-    assert math.isclose(new_arc.radius, 2.0)
-    assert math.isclose(new_arc.start_angle, 0.0)
+    # El arco se recalcula para pasar exactamente por los dos extremos
+    assert math.isclose(new_arc.start_point().distance_to(Point2D(2, 0)), 0.0, abs_tol=1e-7)
+    assert math.isclose(new_arc.end_point().distance_to(Point2D(0, 1)), 0.0, abs_tol=1e-7)
 
 
 def test_move_arc_center_translates():
@@ -46,7 +47,7 @@ def test_move_arc_center_translates():
     new_arc = t.get_edge(e.id).geometry
     assert isinstance(new_arc, Arc)
     assert new_arc.center == Point2D(1, 1)
-    # Los extremos tambien se mueven
+    # Los extremos tambien se mueven solidariamente
     assert t.get_vertex(v0.id).point == Point2D(2, 1)
     assert t.get_vertex(v1.id).point == Point2D(1, 2)
 
