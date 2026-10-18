@@ -51,9 +51,48 @@ class CadCanvas(QGraphicsView):
         self.document.topology_changed.connect(self._redraw_all)
         self.document.mesh_generated.connect(self._on_mesh_generated)
 
+    def _model_bounding_rect(self):
+        """Calcula los limites del modelo completo y de la malla visible."""
+        from PyQt5.QtCore import QRectF
+        bounds = None
+
+        def include(x0, y0, x1, y1):
+            nonlocal bounds
+            rect = QRectF(min(x0, x1), min(y0, y1),
+                          abs(x1 - x0), abs(y1 - y0))
+            bounds = rect if bounds is None else bounds.united(rect)
+
+        for edge in self.document.topology.edges():
+            lo, hi = edge.geometry.bounding_box()
+            include(lo.x, lo.y, hi.x, hi.y)
+        for vertex in self.document.topology.vertices():
+            include(vertex.point.x, vertex.point.y,
+                    vertex.point.x, vertex.point.y)
+        for block_mesh in self.document.block_meshes:
+            for row in block_mesh.grid:
+                for point in row:
+                    include(point.x, point.y, point.x, point.y)
+        return bounds
+
     def reset_zoom(self) -> None:
+        """Encuadra todo el modelo, elimina el pan y conserva Y hacia arriba."""
+        rect = self._model_bounding_rect()
         self.resetTransform()
-        self.scale(1, -1)
+        self.scale(1.0, -1.0)
+        if rect is None:
+            self.centerOn(0.0, 0.0)
+            self.viewport().update()
+            return
+        if rect.width() < 1.0:
+            rect.adjust(-0.5, 0.0, 0.5, 0.0)
+        if rect.height() < 1.0:
+            rect.adjust(0.0, -0.5, 0.0, 0.5)
+        margin = max(10.0, 0.05 * max(rect.width(), rect.height()))
+        rect.adjust(-margin, -margin, margin, margin)
+        self.scene().setSceneRect(rect)
+        self.fitInView(rect, Qt.KeepAspectRatio)
+        self.centerOn(rect.center())
+        self.viewport().update()
 
     def set_tool(self, tool) -> None:
         if self.tool is not None:
