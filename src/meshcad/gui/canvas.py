@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt5.QtWidgets import (
     QGraphicsEllipseItem,
@@ -16,10 +16,14 @@ from meshcad.gui.document import Document
 from meshcad.gui.items import GeometryItem
 
 VERTEX_RADIUS = 4.0
+GRIP_RADIUS = 3.5
 SNAP_TOLERANCE = 8.0
 
 
 class CadCanvas(QGraphicsView):
+    mouse_moved = pyqtSignal(float, float)
+    show_grid = True
+
     def __init__(self, document: Document, parent=None) -> None:
         super().__init__(parent)
         self.document = document
@@ -29,15 +33,17 @@ class CadCanvas(QGraphicsView):
         self.setBackgroundBrush(QBrush(QColor(250, 250, 252)))
 
         self.tool = None
-        self._vertex_items = {}
+        self._drag_target = None
         self._preview_item = None
         self._highlight_item = None
         self._mesh_item = None
+        
+        self._vertex_items = {}
+        self._grip_items = []
+        self._geometry_items = []
 
-        self.document.topology_changed.connect(self._redraw_vertices)
+        self.document.topology_changed.connect(self._redraw_all)
         self.document.mesh_generated.connect(self._on_mesh_generated)
-
-    # ----------------------------- API publica --------------------------- #
 
     def set_tool(self, tool) -> None:
         if self.tool is not None:
@@ -46,15 +52,9 @@ class CadCanvas(QGraphicsView):
 
     def add_geometry(self, geometry):
         topo = self.document.topology
-        v_start = topo.find_vertex_at(geometry.start_point())
-        if v_start is None:
-            v_start = topo.add_vertex(geometry.start_point())
-        v_end = topo.find_vertex_at(geometry.end_point())
-        if v_end is None:
-            v_end = topo.add_vertex(geometry.end_point())
+        v_start = topo.find_vertex_at(geometry.start_point()) or topo.add_vertex(geometry.start_point())
+        v_end = topo.find_vertex_at(geometry.end_point()) or topo.add_vertex(geometry.end_point())
         edge = topo.add_edge(v_start, v_end, geometry)
-        item = GeometryItem(geometry)
-        self.scene().addItem(item)
         self.document.notify_change()
         return edge
 
@@ -77,8 +77,6 @@ class CadCanvas(QGraphicsView):
             return best
         return None
 
-    # ----------------------------- preview ------------------------------- #
-
     def show_preview(self, geometry) -> None:
         self.clear_preview()
         if geometry is None:
@@ -91,8 +89,6 @@ class CadCanvas(QGraphicsView):
         if self._preview_item is not None:
             self.scene().removeItem(self._preview_item)
             self._preview_item = None
-
-    # ---------------------------- highlight ------------------------------ #
 
     def highlight_loop(self, loop) -> None:
         self.clear_highlight()
@@ -133,10 +129,7 @@ class CadCanvas(QGraphicsView):
         item.setBrush(QBrush(QColor(60, 200, 60)))
         QTimer.singleShot(200, lambda: item.setBrush(original_brush))
 
-    # ------------------------------ mesh --------------------------------- #
-
     def show_mesh(self, block_meshes) -> None:
-        """Dibuja las mallas de los bloques como lineas finas."""
         self.clear_mesh()
         path = QPainterPath()
         for bm in block_meshes:
@@ -146,12 +139,10 @@ class CadCanvas(QGraphicsView):
                 continue
             n_u = len(grid[0])
 
-            # Lineas verticales (columnas)
             for i in range(n_u):
                 path.moveTo(grid[0][i].x, grid[0][i].y)
                 for j in range(1, n_v):
                     path.lineTo(grid[j][i].x, grid[j][i].y)
-            # Lineas horizontales (filas)
             for j in range(n_v):
                 path.moveTo(grid[j][0].x, grid[j][0].y)
                 for i in range(1, n_u):
@@ -181,12 +172,56 @@ class CadCanvas(QGraphicsView):
             self.tool.mouse_press(event)
             event.accept()
             return
+
+        if event.button() == Qt.LeftButton:
+            pos = self.mapToScene(event.pos())
+            p = Point2D(pos.x(), pos.y())
+
+            # Comprobar vertices
+            v = self.snap_to_vertex(p)
+            if v is not None:
+                self._drag_target = ('vertex', v.id)
+                event.accept()
+                return
+
+            # Comprobar grips (arcos y splines)
+            scale = self.transform().m11()
+            tol = SNAP_TOLERANCE / scale if scale > 0 else SNAP_TOLERANCE
+            for edge in self.document.topology.edges():
+                for i, g in enumerate(edge.geometry.get_grips()):
+                    if g.distance_to(p) <= tol:
+                        self._drag_target = ('grip', edge.id, i)
+                        event.accept()
+                        return
+
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event) -> None:
+        pos = self.mapToScene(event.pos())
+        self.mouse_moved.emit(pos.x(), pos.y())
+
+        if self._drag_target:
+            p = Point2D(pos.x(), pos.y())
+            if self._drag_target[0] == 'vertex':
+                self.document.topology.move_vertex(self._drag_target[1], p)
+            else:
+                self.document.topology.move_edge_grip(
+                    self._drag_target[1], self._drag_target[2], p
+                )
+            self.document.notify_change()
+            event.accept()
+            return
+
         if self.tool is not None:
             self.tool.mouse_move(event)
         super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._drag_target:
+            self._drag_target = None
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key_Escape and self.tool is not None:
@@ -198,23 +233,46 @@ class CadCanvas(QGraphicsView):
 
     # --------------------------- dibujo interno -------------------------- #
 
-    def _redraw_vertices(self) -> None:
+    def _redraw_all(self) -> None:
+        for item in self._geometry_items:
+            self.scene().removeItem(item)
+        self._geometry_items.clear()
+
         for item in self._vertex_items.values():
             self.scene().removeItem(item)
         self._vertex_items.clear()
 
-        pen = QPen(QColor(200, 40, 40))
-        pen.setWidthF(1.0)
-        brush = QBrush(QColor(255, 220, 220))
+        for item in self._grip_items:
+            self.scene().removeItem(item)
+        self._grip_items.clear()
+
+        # Aristas
+        for edge in self.document.topology.edges():
+            item = GeometryItem(edge.geometry)
+            self.scene().addItem(item)
+            self._geometry_items.append(item)
+
+        # Vertices
+        pen_v = QPen(QColor(200, 40, 40))
+        brush_v = QBrush(QColor(255, 220, 220))
         for v in self.document.topology.vertices():
-            item = QGraphicsEllipseItem(
-                v.point.x - VERTEX_RADIUS,
-                v.point.y - VERTEX_RADIUS,
-                2 * VERTEX_RADIUS,
-                2 * VERTEX_RADIUS,
-            )
-            item.setPen(pen)
-            item.setBrush(brush)
+            item = QGraphicsEllipseItem(v.point.x - VERTEX_RADIUS, v.point.y - VERTEX_RADIUS,
+                                        VERTEX_RADIUS * 2, VERTEX_RADIUS * 2)
+            item.setPen(pen_v)
+            item.setBrush(brush_v)
             item.setZValue(10.0)
             self.scene().addItem(item)
             self._vertex_items[v.id] = item
+
+        # Grips
+        pen_g = QPen(QColor(40, 100, 200))
+        brush_g = QBrush(QColor(200, 220, 255))
+        for edge in self.document.topology.edges():
+            for g in edge.geometry.get_grips():
+                item = QGraphicsEllipseItem(g.x - GRIP_RADIUS, g.y - GRIP_RADIUS,
+                                            GRIP_RADIUS * 2, GRIP_RADIUS * 2)
+                item.setPen(pen_g)
+                item.setBrush(brush_g)
+                item.setZValue(9.0)
+                self.scene().addItem(item)
+                self._grip_items.append(item)

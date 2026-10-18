@@ -5,14 +5,8 @@ from pathlib import Path
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QAction,
-    QApplication,
-    QFileDialog,
-    QLabel,
-    QMainWindow,
-    QMessageBox,
-    QStatusBar,
-    QToolBar,
+    QAction, QApplication, QFileDialog, QLabel, QMainWindow,
+    QMessageBox, QStatusBar, QToolBar,
 )
 
 from meshcad.gui.blocks_panel import BlocksPanel
@@ -50,15 +44,21 @@ class MainWindow(QMainWindow):
         self.document.topology_changed.connect(self.edges_panel.refresh)
         self.document.project_replaced.connect(self._on_project_replaced)
 
+        # Barra de estado
         status = QStatusBar()
         self.setStatusBar(status)
+        
         self.status_label = QLabel("Listo")
         status.addWidget(self.status_label)
+        
+        self.coords_label = QLabel("X: 0.00, Y: 0.00")
+        self.coords_label.setStyleSheet("padding-right: 10px;")
+        status.addPermanentWidget(self.coords_label)
+        
+        self.canvas.mouse_moved.connect(self._on_mouse_moved)
 
         self._create_menus()
         self._create_toolbar()
-
-    # ------------------------------ menus ------------------------------- #
 
     def _create_menus(self) -> None:
         file_menu = self.menuBar().addMenu("&Archivo")
@@ -134,7 +134,8 @@ class MainWindow(QMainWindow):
         self.action_clear_mesh.triggered.connect(self.canvas.clear_mesh)
         toolbar.addAction(self.action_clear_mesh)
 
-    # ---------------------------- file slots ---------------------------- #
+    def _on_mouse_moved(self, x: float, y: float) -> None:
+        self.coords_label.setText("X: {:.2f}, Y: {:.2f}".format(x, y))
 
     def _on_new(self) -> None:
         self.document.load_from(Document())
@@ -170,8 +171,7 @@ class MainWindow(QMainWindow):
 
     def _on_save_as(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
-            self, "Guardar proyecto como", "proyecto.json",
-            "MeshCAD (*.json);;Todos (*)"
+            self, "Guardar proyecto como", "proyecto.json", "MeshCAD (*.json);;Todos (*)"
         )
         if not path:
             return
@@ -189,14 +189,10 @@ class MainWindow(QMainWindow):
 
     def _on_export_vtk(self) -> None:
         if not self.document.block_meshes:
-            QMessageBox.information(
-                self, "Sin malla",
-                "Genera primero la malla con el boton 'Generar malla'."
-            )
+            QMessageBox.information(self, "Sin malla", "Genera primero la malla.")
             return
         path, _ = QFileDialog.getSaveFileName(
-            self, "Exportar malla VTK", "malla.pvd",
-            "ParaView Data (*.pvd);;Todos (*)"
+            self, "Exportar malla VTK", "malla.pvd", "ParaView Data (*.pvd);;Todos (*)"
         )
         if not path:
             return
@@ -207,8 +203,6 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error al exportar", str(e))
             return
         self.status_label.setText("Malla exportada a: {}".format(path))
-
-    # ------------------------------ helpers ----------------------------- #
 
     def _update_title(self) -> None:
         if self.current_path is None:
@@ -226,9 +220,7 @@ class MainWindow(QMainWindow):
         else:
             total_cells = sum(bm.cell_count() for bm in meshes)
             self.status_label.setText(
-                "Malla generada: {} bloques, {} celdas".format(
-                    len(meshes), total_cells
-                )
+                "Malla generada: {} bloques, {} celdas".format(len(meshes), total_cells)
             )
 
 
