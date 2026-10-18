@@ -132,16 +132,17 @@ class EdgesPanel(QDockWidget):
             return
             
         edges = self.document.topology.edges()
-        success = 0
-        fail = 0
+        edge_ids_to_delete = []
         for item in selected_items:
             row = self.list_widget.row(item)
             if 0 <= row < len(edges):
-                if self.document.remove_edge(edges[row].id):
-                    success += 1
-                else:
-                    fail += 1
+                edge_ids_to_delete.append(edges[row].id)
+                
+        self.canvas.clear_highlight()
+
+        success, fail = self.document.remove_edges(edge_ids_to_delete)
         self.refresh()
+        
         if fail > 0:
             self.status.setText("{} aristas borradas. {} no se pudieron borrar porque pertenecen a un bloque.".format(success, fail))
         else:

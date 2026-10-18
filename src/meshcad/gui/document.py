@@ -53,16 +53,29 @@ class Document(QObject):
             self.generate_mesh()
         self.blocks_changed.emit()
 
-    def remove_edge(self, edge_id: int) -> bool:
-        for b in self.blocks:
-            for side in b.sides:
-                if edge_id in side.edge_ids():
-                    return False
-        
-        self.topology.remove_edge(edge_id)
-        self.mesh.clear_spec(edge_id)
-        self.notify_change()
-        return True
+    def remove_edges(self, edge_ids: list) -> tuple:
+        success = 0
+        fail = 0
+        for eid in edge_ids:
+            in_block = False
+            for b in self.blocks:
+                for side in b.sides:
+                    if eid in side.edge_ids():
+                        in_block = True
+                        break
+                if in_block:
+                    break
+            
+            if in_block:
+                fail += 1
+            else:
+                self.topology.remove_edge(eid)
+                self.mesh.clear_spec(eid)
+                success += 1
+                
+        if success > 0:
+            self.notify_change()
+        return success, fail
 
     def recompute_blocks(self) -> None:
         for block in self.blocks:
