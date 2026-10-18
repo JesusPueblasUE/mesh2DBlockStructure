@@ -7,7 +7,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 from PyQt5.QtWidgets import QUndoStack
 
 from meshcad.core.mesh.generator import BlockMesh, mesh_block
-from meshcad.core.mesh.model import EdgeMeshSpec, MeshModel
+from meshcad.core.mesh.model import EdgeMeshSpec, MeshModel, UniformDistribution
 from meshcad.core.topology.block import Block
 from meshcad.core.topology.topology import Topology
 
@@ -83,7 +83,31 @@ class Document(QObject):
                 side.node_count = self.mesh.side_node_count(side)
         self.blocks_changed.emit()
 
+    # ------------------------------- mesh ------------------------------- #
+
+    def _propagate_nodes(self, edge_id: int, n_nodes: int, visited: set) -> None:
+        if edge_id in visited:
+            return
+        visited.add(edge_id)
+
+        spec = self.mesh.get_spec(edge_id)
+        self.mesh.set_spec(EdgeMeshSpec(edge_id, n_nodes, spec.distribution))
+
+        for block in self.blocks:
+            for i, side in enumerate(block.sides):
+                if edge_id in side.edge_ids():
+                    opp_idx = (i + 2) % 4
+                    opp_side = block.sides[opp_idx]
+                    k = len(opp_side.oriented_edges)
+                    if k > 0:
+                        base = (n_nodes + k - 1) // k
+                        for oe in opp_side.oriented_edges:
+                            self._propagate_nodes(oe.edge_id, base, visited)
+
     def set_edge_spec(self, spec: EdgeMeshSpec) -> None:
+        visited = set()
+        self._propagate_nodes(spec.edge_id, spec.n_nodes, visited)
+        # Asegurarnos de que la arista original mantiene su distribucion
         self.mesh.set_spec(spec)
         self.mesh_changed.emit()
         self.recompute_blocks()
@@ -91,7 +115,9 @@ class Document(QObject):
             self.generate_mesh()
 
     def set_edge_specs(self, specs: List[EdgeMeshSpec]) -> None:
+        visited = set()
         for spec in specs:
+            self._propagate_nodes(spec.edge_id, spec.n_nodes, visited)
             self.mesh.set_spec(spec)
         self.mesh_changed.emit()
         self.recompute_blocks()
